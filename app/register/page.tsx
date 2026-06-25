@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Home, Lock, Mail, Phone, User, Wifi } from "lucide-react";
-import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 type PendingClient = {
   id: number;
@@ -137,9 +136,7 @@ export default function RegisterPage() {
               <h1 className="text-3xl font-bold text-white">CyberCanvas Services</h1>
             </div>
 
-            <SocialAuthButtons />
-
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <Field icon={<User />} value={form.nom} placeholder="Nom et prenom" onChange={(value) => updateField("nom", value)} />
               <Field icon={<Phone />} value={form.telephone} placeholder="Telephone" type="tel" onChange={(value) => updateField("telephone", value)} />
               <Field icon={<Mail />} value={form.email} placeholder="Adresse email" type="email" onChange={(value) => updateField("email", value)} />

@@ -5,7 +5,6 @@ import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, Lock, ShieldCheck, User, Wifi } from "lucide-react";
-import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 type ClientUser = {
   email: string;
@@ -94,9 +93,7 @@ function LoginContent() {
 
   return (
     <LoginShell>
-      <SocialAuthButtons />
-
-      <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="relative">
           <User className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
           <input
