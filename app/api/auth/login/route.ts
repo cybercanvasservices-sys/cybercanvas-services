@@ -5,10 +5,8 @@ import {
   getAdminSessionMaxAge,
 } from "@/lib/admin-session";
 
-const ADMIN_EMAIL =
-  process.env.ADMIN_EMAIL || "admin@cybercanvas.local";
-const ADMIN_PASSWORD =
-  process.env.ADMIN_PASSWORD || "admin12345";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const attempts = new Map<string, { count: number; blockedUntil: number }>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 15 * 60;
@@ -39,6 +37,13 @@ function registerFailedAttempt(key: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    return NextResponse.json(
+      { message: "Configuration administrateur manquante" },
+      { status: 503 }
+    );
+  }
+
   const clientKey = getClientKey(request);
 
   if (isBlocked(clientKey)) {
