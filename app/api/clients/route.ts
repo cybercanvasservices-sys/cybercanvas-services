@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-session";
+import { sendEmail } from "@/lib/email";
 import { hashPassword } from "@/lib/passwords";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
@@ -95,6 +96,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
+  await sendEmail({
+    to: email,
+    subject: "Demande de compte recue - CyberCanvas Services",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+        <h2>Demande de compte recue</h2>
+        <p>Bonjour ${nom},</p>
+        <p>Votre demande de compte CyberCanvas Services a bien ete recue.</p>
+        <p>Votre compte sera utilisable apres validation par l'administrateur.</p>
+      </div>
+    `,
+  });
+
   return NextResponse.json({
     message:
       "Votre demande a ete envoyee. Votre compte doit etre valide par l'administrateur avant connexion.",
@@ -151,6 +165,21 @@ export async function PATCH(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+
+  if (payload.statut === "actif" && data.email) {
+    await sendEmail({
+      to: data.email,
+      subject: "Compte valide - CyberCanvas Services",
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+          <h2>Votre compte est valide</h2>
+          <p>Bonjour ${data.nom},</p>
+          <p>Votre compte CyberCanvas Services a ete valide par l'administrateur.</p>
+          <p>Vous pouvez maintenant vous connecter.</p>
+        </div>
+      `,
+    });
   }
 
   return NextResponse.json({ client: data });

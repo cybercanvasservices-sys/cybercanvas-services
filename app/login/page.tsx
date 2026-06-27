@@ -126,6 +126,15 @@ function LoginContent() {
         >
           {loading ? "Connexion..." : "Connexion"}
         </button>
+
+        <div className="text-right">
+          <Link
+            href="/mot-de-passe-oublie"
+            className="text-sm font-bold text-cyan-300 hover:text-cyan-100"
+          >
+            Mot de passe oublie ?
+          </Link>
+        </div>
       </form>
 
       <div className="mt-5 grid gap-3 text-center text-sm text-slate-300">
