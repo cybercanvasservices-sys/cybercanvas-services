@@ -12,6 +12,10 @@ function clean(value: unknown) {
   return String(value || "").trim();
 }
 
+function getAdminAlertEmail() {
+  return process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL || "";
+}
+
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
@@ -108,6 +112,30 @@ export async function POST(request: NextRequest) {
       </div>
     `,
   });
+
+  const adminAlertEmail = getAdminAlertEmail();
+
+  if (adminAlertEmail) {
+    const utilisateursUrl = new URL("/utilisateurs", request.url);
+
+    await sendEmail({
+      to: adminAlertEmail,
+      subject: "Nouvelle inscription a valider - CyberCanvas Services",
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+          <h2>Nouvelle inscription client</h2>
+          <p>Une nouvelle demande de compte vient d'etre envoyee sur CyberCanvas Services.</p>
+          <table style="border-collapse:collapse;margin:16px 0;width:100%;max-width:520px">
+            <tr><td style="padding:8px;border:1px solid #e2e8f0;font-weight:700">Nom</td><td style="padding:8px;border:1px solid #e2e8f0">${nom}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #e2e8f0;font-weight:700">Email</td><td style="padding:8px;border:1px solid #e2e8f0">${email}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #e2e8f0;font-weight:700">Telephone</td><td style="padding:8px;border:1px solid #e2e8f0">${telephone}</td></tr>
+          </table>
+          <p>Connectez-vous a l'espace administrateur pour valider ou refuser cette inscription.</p>
+          <p><a href="${utilisateursUrl.toString()}" style="display:inline-block;background:#06b6d4;color:#00111a;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Ouvrir les validations</a></p>
+        </div>
+      `,
+    });
+  }
 
   return NextResponse.json({
     message:
