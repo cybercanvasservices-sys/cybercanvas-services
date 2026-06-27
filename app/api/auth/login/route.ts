@@ -102,14 +102,21 @@ export async function POST(request: NextRequest) {
   if (supabase) {
     const { data: client, error } = await supabase
       .from("clients")
-      .select("email, statut, password_hash")
+      .select("email, statut, password_hash, email_verified")
       .eq("email", email)
       .maybeSingle();
 
     if (!error && client && (await verifyPassword(password, client.password_hash))) {
+      if (!client.email_verified) {
+        return NextResponse.json(
+          { message: "Veuillez confirmer votre adresse email avant de vous connecter." },
+          { status: 403 }
+        );
+      }
+
       if (client.statut === "en_attente") {
         return NextResponse.json(
-          { message: "Votre compte est en attente de validation par l'administrateur." },
+          { message: "Votre compte est en cours d'activation." },
           { status: 403 }
         );
       }

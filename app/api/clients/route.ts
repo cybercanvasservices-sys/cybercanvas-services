@@ -16,6 +16,17 @@ function getAdminAlertEmail() {
   return process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL || "";
 }
 
+async function hashToken(token: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token)
+  );
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
@@ -85,6 +96,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const verificationToken =
+    crypto.randomUUID().replaceAll("-", "") +
+    crypto.randomUUID().replaceAll("-", "");
+  const verificationUrl = new URL("/verification-email", request.url);
+  verificationUrl.searchParams.set("token", verificationToken);
+
   const { error } = await supabase.from("clients").insert({
     nom,
     email,
@@ -93,6 +110,9 @@ export async function POST(request: NextRequest) {
     ville: clean(body.ville) || "Non renseignee",
     statut: "en_attente",
     discussion: false,
+    email_verified: false,
+    verification_token_hash: await hashToken(verificationToken),
+    verification_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     password_hash: await hashPassword(password),
   });
 
@@ -102,13 +122,30 @@ export async function POST(request: NextRequest) {
 
   await sendEmail({
     to: email,
-    subject: "Demande de compte recue - CyberCanvas Services",
+    subject: "Validation de votre adresse email - CyberCanvas Services",
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
-        <h2>Demande de compte recue</h2>
-        <p>Bonjour ${nom},</p>
-        <p>Votre demande de compte CyberCanvas Services a bien ete recue.</p>
-        <p>Votre compte sera utilisable apres validation par l'administrateur.</p>
+      <div style="margin:0;padding:0;background:#f3f7fb;font-family:Arial,sans-serif;color:#0f172a">
+        <div style="max-width:560px;margin:0 auto;padding:28px 16px">
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden">
+            <div style="background:#07111f;color:#ffffff;padding:22px 24px">
+              <h1 style="margin:0;font-size:22px;line-height:1.3">CyberCanvas Services</h1>
+              <p style="margin:6px 0 0;color:#99f6e4;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Validation email</p>
+            </div>
+            <div style="padding:26px 24px;line-height:1.7">
+              <h2 style="margin:0 0 12px;font-size:20px">Bonjour ${nom},</h2>
+              <p style="margin:0 0 14px">Merci pour votre inscription sur CyberCanvas Services.</p>
+              <p style="margin:0 0 22px">Veuillez cliquer sur le bouton ci-dessous pour confirmer que cette adresse e-mail vous appartient.</p>
+              <p style="margin:0 0 22px">
+                <a href="${verificationUrl.toString()}" style="display:inline-block;background:#06b6d4;color:#00111a;padding:13px 20px;border-radius:10px;text-decoration:none;font-weight:800">Confirmer mon e-mail</a>
+              </p>
+              <p style="margin:0 0 14px">Vous devez valider votre e-mail avant de pouvoir utiliser vos identifiants de connexion.</p>
+              <p style="margin:0;color:#64748b;font-size:13px">Si vous n'avez pas cree de compte sur CyberCanvas Services, ignorez simplement ce message.</p>
+            </div>
+            <div style="border-top:1px solid #e2e8f0;padding:16px 24px;color:#64748b;font-size:12px">
+              Ce message vous est envoye parce qu'une inscription a ete faite sur CyberCanvas Services. Le lien expire dans 24 heures.
+            </div>
+          </div>
+        </div>
       </div>
     `,
   });
@@ -139,7 +176,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     message:
-      "Votre demande a ete envoyee. Votre compte doit etre valide par l'administrateur avant connexion.",
+      "Votre compte a ete cree. Consultez votre boite email pour confirmer votre inscription.",
   });
 }
 
