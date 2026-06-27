@@ -42,7 +42,7 @@ export default function RegisterPage() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");
@@ -62,15 +62,22 @@ export default function RegisterPage() {
       return;
     }
 
-    const users = readUsers();
-    const exists = users.some(
-      (user) => user.email.toLowerCase() === form.email.toLowerCase()
-    );
+    const response = await fetch("/api/clients", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    });
 
-    if (exists) {
-      setError("Une demande existe deja avec cette adresse email.");
+    const result = (await response.json()) as { message?: string };
+
+    if (!response.ok) {
+      setError(result.message || "Impossible d'envoyer la demande.");
       return;
     }
+
+    const users = readUsers();
 
     const pendingClient: PendingClient = {
       id: Date.now(),
@@ -94,9 +101,7 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
     });
-    setMessage(
-      "Votre demande a ete envoyee. Votre compte doit etre valide par l'administrateur avant connexion."
-    );
+    setMessage(result.message || "Votre demande a ete envoyee.");
   }
 
   return (

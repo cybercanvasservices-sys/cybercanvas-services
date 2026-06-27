@@ -1,7 +1,9 @@
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
-type AdminSessionPayload = {
-  sub: "admin";
+type SessionRole = "admin" | "client";
+
+type SessionPayload = {
+  sub: SessionRole;
   email: string;
   exp: number;
   nonce: string;
@@ -66,9 +68,9 @@ async function sign(value: string) {
   return base64UrlEncode(new Uint8Array(signature));
 }
 
-export async function createAdminSession(email: string) {
-  const payload: AdminSessionPayload = {
-    sub: "admin",
+async function createSession(email: string, role: SessionRole) {
+  const payload: SessionPayload = {
+    sub: role,
     email,
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
     nonce: crypto.randomUUID(),
@@ -83,7 +85,7 @@ export async function createAdminSession(email: string) {
   return `${encodedPayload}.${signature}`;
 }
 
-export async function verifyAdminSession(session?: string) {
+async function verifySession(session: string | undefined, role: SessionRole) {
   if (!session) {
     return false;
   }
@@ -102,12 +104,28 @@ export async function verifyAdminSession(session?: string) {
 
   try {
     const decoded = new TextDecoder().decode(base64UrlDecode(encodedPayload));
-    const payload = JSON.parse(decoded) as AdminSessionPayload;
+    const payload = JSON.parse(decoded) as SessionPayload;
 
-    return payload.sub === "admin" && payload.exp > Math.floor(Date.now() / 1000);
+    return payload.sub === role && payload.exp > Math.floor(Date.now() / 1000);
   } catch {
     return false;
   }
+}
+
+export function createAdminSession(email: string) {
+  return createSession(email, "admin");
+}
+
+export function createClientSession(email: string) {
+  return createSession(email, "client");
+}
+
+export function verifyAdminSession(session?: string) {
+  return verifySession(session, "admin");
+}
+
+export function verifyClientSession(session?: string) {
+  return verifySession(session, "client");
 }
 
 export function getAdminSessionMaxAge() {

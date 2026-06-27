@@ -1,17 +1,31 @@
 ﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-session";
+import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
+
+const adminOnlyRoutes = ["/utilisateurs"];
 
 export async function middleware(request: NextRequest) {
-  const session =
-    request.cookies.get("admin_session")?.value;
+  const adminSession = request.cookies.get("admin_session")?.value;
+  const clientSession = request.cookies.get("client_session")?.value;
+  const isAdmin = await verifyAdminSession(adminSession);
 
-  if (!(await verifyAdminSession(session))) {
+  if (adminOnlyRoutes.some((route) => request.nextUrl.pathname.startsWith(route))) {
+    if (isAdmin) {
+      return NextResponse.next();
+    }
+
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set(
       "next",
       request.nextUrl.pathname
     );
+
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (!(isAdmin || (await verifyClientSession(clientSession)))) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
 
     return NextResponse.redirect(loginUrl);
   }

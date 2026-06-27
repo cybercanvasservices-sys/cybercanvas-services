@@ -23,7 +23,24 @@ export default function AdminShell({
   const [pendingAccounts, setPendingAccounts] = useState(0);
 
   useEffect(() => {
-    function refreshPendingAccounts() {
+    async function refreshPendingAccounts() {
+      try {
+        const response = await fetch("/api/clients", { cache: "no-store" });
+
+        if (response.ok) {
+          const result = (await response.json()) as {
+            clients?: { statut?: string }[];
+          };
+
+          setPendingAccounts(
+            (result.clients || []).filter((user) => user.statut === "en_attente").length
+          );
+          return;
+        }
+      } catch {
+        // Retour au stockage local si la base n'est pas encore configuree.
+      }
+
       try {
         const users = JSON.parse(
           window.localStorage.getItem("cybercanvas-users-demo") || "[]"
@@ -36,15 +53,19 @@ export default function AdminShell({
       }
     }
 
-    refreshPendingAccounts();
-    window.addEventListener("storage", refreshPendingAccounts);
-    window.addEventListener("cybercanvas-users-updated", refreshPendingAccounts);
+    void refreshPendingAccounts();
+    const listener = () => {
+      void refreshPendingAccounts();
+    };
+
+    window.addEventListener("storage", listener);
+    window.addEventListener("cybercanvas-users-updated", listener);
 
     return () => {
-      window.removeEventListener("storage", refreshPendingAccounts);
+      window.removeEventListener("storage", listener);
       window.removeEventListener(
         "cybercanvas-users-updated",
-        refreshPendingAccounts
+        listener
       );
     };
   }, []);

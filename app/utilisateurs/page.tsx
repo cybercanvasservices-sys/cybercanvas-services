@@ -29,6 +29,7 @@ type ClientUser = {
   discussion: boolean;
   photo?: string;
   createdAt?: string;
+  created_at?: string;
 };
 
 const initialUsers: ClientUser[] = [
@@ -59,7 +60,7 @@ function normalizeUser(user: ClientUser): ClientUser {
     ...user,
     entreprise: user.entreprise || "Non renseignee",
     telephone: user.telephone.includes("*") ? user.telephone : maskPhone(user.telephone),
-    createdAt: user.createdAt || new Date().toISOString(),
+    createdAt: user.createdAt || user.created_at || new Date().toISOString(),
   };
 }
 
@@ -97,6 +98,34 @@ export default function UtilisateursPage() {
 
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
   const pendingCount = users.filter((user) => user.statut === "en_attente").length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUsersFromServer() {
+      try {
+        const response = await fetch("/api/clients", { cache: "no-store" });
+
+        if (!response.ok) return;
+
+        const result = (await response.json()) as { clients?: ClientUser[] };
+        const nextUsers = (result.clients || []).map(normalizeUser);
+
+        if (!cancelled) {
+          setUsers(nextUsers);
+          setSelectedUserId((current) => current || nextUsers[0]?.id || null);
+        }
+      } catch {
+        // La page garde les donnees locales si Supabase n'est pas encore pret.
+      }
+    }
+
+    loadUsersFromServer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -169,51 +198,94 @@ export default function UtilisateursPage() {
     reader.readAsDataURL(file);
   }
 
-  function updateUserStatus(userId: number, statut: ClientStatus) {
+  async function patchUser(userId: number, payload: Partial<ClientUser>) {
+    const response = await fetch("/api/clients", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: userId, ...payload }),
+    });
+
+    const result = (await response.json()) as {
+      client?: ClientUser;
+      message?: string;
+    };
+
+    if (!response.ok || !result.client) {
+      window.alert(result.message || "Modification impossible.");
+      return null;
+    }
+
+    return normalizeUser(result.client);
+  }
+
+  async function updateUserStatus(userId: number, statut: ClientStatus) {
+    const updatedUser = await patchUser(userId, { statut });
+
+    if (!updatedUser) return;
+
     setUsers((current) =>
       current.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              statut,
-              discussion: statut === "actif" ? user.discussion : false,
-            }
-          : user
+        user.id === userId ? updatedUser : user
       )
     );
   }
 
-  function toggleDiscussion(userId: number) {
+  async function toggleDiscussion(userId: number) {
+    const user = users.find((item) => item.id === userId);
+
+    if (!user || user.statut !== "actif") return;
+
+    const updatedUser = await patchUser(userId, {
+      discussion: !user.discussion,
+    });
+
+    if (!updatedUser) return;
+
     setUsers((current) =>
       current.map((user) =>
-        user.id === userId && user.statut === "actif"
-          ? {
-              ...user,
-              discussion: !user.discussion,
-            }
-          : user
+        user.id === userId ? updatedUser : user
       )
     );
   }
 
-  function toggleStatus(userId: number) {
+  async function toggleStatus(userId: number) {
+    const user = users.find((item) => item.id === userId);
+
+    if (!user) return;
+
+    const updatedUser = await patchUser(userId, {
+      statut: user.statut === "actif" ? "suspendu" : "actif",
+    });
+
+    if (!updatedUser) return;
+
     setUsers((current) =>
       current.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              statut: user.statut === "actif" ? "suspendu" : "actif",
-              discussion: user.statut !== "actif" ? user.discussion : false,
-            }
-          : user
+        user.id === userId ? updatedUser : user
       )
     );
   }
 
-  function deleteUser(userId: number) {
+  async function deleteUser(userId: number) {
     const confirmed = window.confirm("Supprimer cet utilisateur ?");
 
     if (!confirmed) return;
+
+    const response = await fetch("/api/clients", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: userId }),
+    });
+
+    if (!response.ok) {
+      const result = (await response.json()) as { message?: string };
+      window.alert(result.message || "Suppression impossible.");
+      return;
+    }
 
     setUsers((current) => current.filter((user) => user.id !== userId));
 

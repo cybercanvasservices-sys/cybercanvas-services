@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
+  createClientSession,
   createAdminSession,
   getAdminSessionMaxAge,
 } from "@/lib/admin-session";
+import { verifyPassword } from "@/lib/passwords";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -37,13 +40,6 @@ function registerFailedAttempt(key: string) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    return NextResponse.json(
-      { message: "Configuration administrateur manquante" },
-      { status: 503 }
-    );
-  }
-
   const clientKey = getClientKey(request);
 
   if (isBlocked(clientKey)) {
@@ -61,40 +57,112 @@ export async function POST(request: NextRequest) {
   const email = body.email?.trim().toLowerCase();
   const password = body.password || "";
 
+  if (!email || !password) {
+    return NextResponse.json(
+      { message: "Email et mot de passe obligatoires." },
+      { status: 400 }
+    );
+  }
+
   if (
-    email !== ADMIN_EMAIL.toLowerCase() ||
-    password !== ADMIN_PASSWORD
+    ADMIN_EMAIL &&
+    ADMIN_PASSWORD &&
+    email === ADMIN_EMAIL.toLowerCase() &&
+    password === ADMIN_PASSWORD
   ) {
-    registerFailedAttempt(clientKey);
+    attempts.delete(clientKey);
 
-    return NextResponse.json(
-      { message: "Identifiants administrateur invalides" },
-      { status: 401 }
-    );
+    const session = await createAdminSession(email);
+
+    if (!session) {
+      return NextResponse.json(
+        { message: "Configuration session administrateur manquante" },
+        { status: 500 }
+      );
+    }
+
+    const response = NextResponse.json({
+      message: "Connexion administrateur reussie",
+      role: "admin",
+    });
+
+    response.cookies.set("admin_session", session, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: getAdminSessionMaxAge(),
+    });
+
+    return response;
   }
 
-  attempts.delete(clientKey);
+  const supabase = getSupabaseAdminClient();
 
-  const session = await createAdminSession(email);
+  if (supabase) {
+    const { data: client, error } = await supabase
+      .from("clients")
+      .select("email, statut, password_hash")
+      .eq("email", email)
+      .maybeSingle();
 
-  if (!session) {
-    return NextResponse.json(
-      { message: "Configuration session administrateur manquante" },
-      { status: 500 }
-    );
+    if (!error && client && (await verifyPassword(password, client.password_hash))) {
+      if (client.statut === "en_attente") {
+        return NextResponse.json(
+          { message: "Votre compte est en attente de validation par l'administrateur." },
+          { status: 403 }
+        );
+      }
+
+      if (client.statut === "refuse") {
+        return NextResponse.json(
+          { message: "Votre demande de compte a ete refusee." },
+          { status: 403 }
+        );
+      }
+
+      if (client.statut === "suspendu") {
+        return NextResponse.json(
+          { message: "Votre compte est suspendu. Contactez CyberCanvas Services." },
+          { status: 403 }
+        );
+      }
+
+      attempts.delete(clientKey);
+
+      const session = await createClientSession(email);
+
+      if (!session) {
+        return NextResponse.json(
+          { message: "Configuration session client manquante." },
+          { status: 500 }
+        );
+      }
+
+      const response = NextResponse.json({
+        message: "Connexion client reussie",
+        role: "client",
+      });
+
+      response.cookies.set("client_session", session, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: getAdminSessionMaxAge(),
+      });
+
+      return response;
+    }
   }
 
-  const response = NextResponse.json({
-    message: "Connexion administrateur reussie",
-  });
+  registerFailedAttempt(clientKey);
 
-  response.cookies.set("admin_session", session, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: getAdminSessionMaxAge(),
-  });
-
-  return response;
+  return NextResponse.json(
+    {
+      message:
+        "Identifiants invalides ou compte non valide. Si vous venez de creer un compte, attendez la validation de l'administrateur.",
+    },
+    { status: 401 }
+  );
 }

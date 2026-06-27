@@ -6,6 +6,7 @@ export async function POST() {
   });
 
   response.cookies.delete("admin_session");
+  response.cookies.delete("client_session");
 
   return response;
 }

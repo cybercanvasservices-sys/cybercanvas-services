@@ -60,10 +60,7 @@ function LoginContent() {
         return;
       }
 
-      window.localStorage.setItem("cybercanvas-client-session", email.trim());
-      router.replace("/dashboard");
-      router.refresh();
-      return;
+      // Les anciens comptes locaux passent maintenant par l'API serveur.
     }
 
     const response = await fetch("/api/auth/login", {
