@@ -11,10 +11,12 @@ type Profil = {
   prix: number;
   duree: string;
   slug: string;
-  tickets?: {
-    id: number;
-    statut: string;
-  }[];
+};
+
+type TicketStat = {
+  profil_id: number;
+  statut: string;
+  total: number;
 };
 
 export default function ProfilsPage() {
@@ -30,17 +32,27 @@ export default function ProfilsPage() {
   const [editPrix, setEditPrix] = useState("");
   const [editDuree, setEditDuree] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ticketStats, setTicketStats] = useState<TicketStat[]>([]);
+
+  async function chargerStatsTickets() {
+    try {
+      const response = await fetch("/api/tickets/stats", { cache: "no-store" });
+      const result = (await response.json()) as {
+        stats?: TicketStat[];
+      };
+
+      if (response.ok) {
+        setTicketStats(result.stats || []);
+      }
+    } catch {
+      setTicketStats([]);
+    }
+  }
 
   async function chargerProfils() {
     const { data, error } = await supabase
       .from("profils")
-      .select(`
-        *,
-        tickets (
-          id,
-          statut
-        )
-      `)
+      .select("*")
       .order("id", { ascending: false });
 
     if (error) {
@@ -49,19 +61,14 @@ export default function ProfilsPage() {
     }
 
     setProfils(data || []);
+    await chargerStatsTickets();
   }
 
   useEffect(() => {
     async function chargerProfilsInitial() {
       const { data, error } = await supabase
         .from("profils")
-        .select(`
-          *,
-          tickets (
-            id,
-            statut
-          )
-        `)
+        .select("*")
         .order("id", { ascending: false });
 
       if (error) {
@@ -70,6 +77,7 @@ export default function ProfilsPage() {
       }
 
       setProfils(data || []);
+      await chargerStatsTickets();
     }
 
     void chargerProfilsInitial();
@@ -133,13 +141,7 @@ export default function ProfilsPage() {
         duree: editDuree,
       })
       .eq("id", editingProfil.id)
-      .select(`
-        *,
-        tickets (
-          id,
-          statut
-        )
-      `)
+      .select("*")
       .single();
 
     if (error) {
@@ -169,13 +171,17 @@ export default function ProfilsPage() {
 
     setLoading(true);
 
-    const { error: ticketsError } = await supabase
-      .from("tickets")
-      .delete()
-      .eq("profil_id", profil.id);
+    const ticketsResponse = await fetch("/api/tickets", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profil_id: profil.id }),
+    });
 
-    if (ticketsError) {
-      alert(ticketsError.message);
+    if (!ticketsResponse.ok) {
+      const result = (await ticketsResponse.json()) as { message?: string };
+      alert(result.message || "Suppression des tickets impossible.");
       setLoading(false);
       return;
     }
@@ -194,6 +200,7 @@ export default function ProfilsPage() {
     setProfils((current) =>
       current.filter((item) => item.id !== profil.id)
     );
+    await chargerStatsTickets();
     setLoading(false);
   }
 
@@ -274,14 +281,13 @@ export default function ProfilsPage() {
             <div className="grid gap-4">
               {profils.map((profil) => {
                 const lienPaiement = `${origin}/buy/${profil.slug}`;
+                const stats = ticketStats.filter(
+                  (stat) => stat.profil_id === profil.id
+                );
                 const disponibles =
-                  profil.tickets?.filter(
-                    (ticket) => ticket.statut === "disponible"
-                  ).length || 0;
+                  stats.find((stat) => stat.statut === "disponible")?.total || 0;
                 const vendus =
-                  profil.tickets?.filter(
-                    (ticket) => ticket.statut === "vendu"
-                  ).length || 0;
+                  stats.find((stat) => stat.statut === "vendu")?.total || 0;
 
                 return (
                   <article

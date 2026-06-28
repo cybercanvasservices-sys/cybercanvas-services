@@ -17,6 +17,13 @@
       "service": "cybercanvas-services"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "CYBERCANVAS_DB",
+      "database_name": "cybercanvas-tickets",
+      "database_id": "d6747f43-eb38-4c4c-91b0-26fa72dcf73a"
+    }
+  ],
   "observability": {
     "enabled": true
   }

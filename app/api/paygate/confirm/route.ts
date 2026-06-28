@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getTicketsDb } from "@/lib/cloudflare-d1";
 
 type Ticket = {
   id: number;
@@ -112,16 +113,34 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: ticketDispo, error: ticketError } = await supabase
-      .from("tickets")
-      .select("id, username, password, profil_id")
-      .eq("profil_id", Number(profilId))
-      .eq("statut", "disponible")
-      .order("id", { ascending: true })
-      .limit(1)
-      .single<Ticket>();
+    const db = await getTicketsDb();
 
-    if (ticketError || !ticketDispo) {
+    if (!db) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Base tickets Cloudflare D1 non configuree",
+        },
+        { status: 500 }
+      );
+    }
+
+    const ticketDispo = await db
+      .prepare(
+        `update tickets
+         set statut = 'vendu', sale_identifier = ?, sold_at = current_timestamp
+         where id = (
+           select id from tickets
+           where profil_id = ? and statut = 'disponible'
+           order by id asc
+           limit 1
+         )
+         returning id, username, password, profil_id`
+      )
+      .bind(identifier, Number(profilId))
+      .first<Ticket>();
+
+    if (!ticketDispo) {
       return NextResponse.json(
         {
           success: false,
@@ -136,13 +155,6 @@ export async function POST(req: Request) {
       .select("prix")
       .eq("id", ticketDispo.profil_id)
       .single<Profil>();
-
-    await supabase
-      .from("tickets")
-      .update({
-        statut: "vendu",
-      })
-      .eq("id", ticketDispo.id);
 
     await supabase.from("ventes").insert([
       {

@@ -40,21 +40,17 @@ export default function TicketsPage() {
   async function chargerTickets() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("tickets")
-        .select(`
-          *,
-          profils (
-            id,
-            nom,
-            prix,
-            duree
-          )
-        `)
-        .order("id", { ascending: false });
+      const response = await fetch("/api/tickets", { cache: "no-store" });
+      const result = (await response.json()) as {
+        tickets?: Ticket[];
+        message?: string;
+      };
 
-      if (error) throw error;
-      setTickets((data as Ticket[]) || []);
+      if (!response.ok) {
+        throw new Error(result.message || "Erreur lors du chargement");
+      }
+
+      setTickets(result.tickets || []);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -129,13 +125,31 @@ export default function TicketsPage() {
         return;
       }
 
-      const { error } = await supabase.from("tickets").insert(ticketsImportes);
+      const response = await fetch("/api/tickets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profil_id: Number(selectedProfilId),
+          tickets: ticketsImportes.map((ticket) => ({
+            username: ticket.username,
+            password: ticket.password,
+          })),
+        }),
+      });
+      const result = (await response.json()) as {
+        message?: string;
+        count?: number;
+      };
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(result.message || "Erreur lors de l'importation");
+      }
 
       setCsvFile(null);
       await chargerTickets();
-      window.alert(`${ticketsImportes.length} tickets importes avec succes`);
+      window.alert(result.message || `${ticketsImportes.length} tickets importes avec succes`);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
