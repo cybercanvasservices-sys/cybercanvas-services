@@ -16,6 +16,9 @@ type AdminShellProps = {
 };
 
 type ConnectedRole = "admin" | "client" | null;
+type ClientInfo = {
+  statut?: string | null;
+};
 
 export default function AdminShell({
   title,
@@ -24,6 +27,7 @@ export default function AdminShell({
 }: AdminShellProps) {
   const [pendingAccounts, setPendingAccounts] = useState(0);
   const [role, setRole] = useState<ConnectedRole>(null);
+  const [client, setClient] = useState<ClientInfo | null>(null);
 
   useEffect(() => {
     async function refreshPendingAccounts() {
@@ -35,11 +39,14 @@ export default function AdminShell({
         if (sessionResponse.ok) {
           const session = (await sessionResponse.json()) as {
             role?: ConnectedRole;
+            client?: ClientInfo | null;
           };
           currentRole = session.role || null;
+          setClient(session.client || null);
         }
       } catch {
         currentRole = null;
+        setClient(null);
       }
 
       setRole(currentRole);
@@ -97,7 +104,7 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen bg-[#eef3f8] text-slate-800">
-      <Sidebar role={role} />
+      <Sidebar role={role} clientStatus={client?.statut || null} />
 
       <div className="min-h-screen pl-[276px]">
         <main className="min-w-0">

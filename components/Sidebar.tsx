@@ -24,10 +24,17 @@ const offerLinks = [
 
 type SidebarRole = "admin" | "client" | null;
 
-export default function Sidebar({ role }: { role?: SidebarRole }) {
+export default function Sidebar({
+  role,
+  clientStatus,
+}: {
+  role?: SidebarRole;
+  clientStatus?: string | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = role === "admin";
+  const canUseOffers = isAdmin || clientStatus === "actif";
   const [offersOpen, setOffersOpen] = useState(() =>
     offerLinks.some(
       (link) =>
@@ -79,34 +86,36 @@ export default function Sidebar({ role }: { role?: SidebarRole }) {
             />
           )}
 
-          <button
-            type="button"
-            onClick={() => setOffersOpen((open) => !open)}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
-              offersOpen
-                ? "bg-cyan-400 text-slate-950"
-                : "text-slate-300 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <span
-              className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+          {canUseOffers && (
+            <button
+              type="button"
+              onClick={() => setOffersOpen((open) => !open)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
                 offersOpen
-                  ? "bg-slate-950/10 text-slate-950"
-                  : "bg-white/8 text-cyan-200"
+                  ? "bg-cyan-400 text-slate-950"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Ticket size={20} />
-            </span>
-            <span className="flex-1 text-left">Offres WiFi</span>
-            <ChevronDown
-              size={18}
-              className={`transition-transform ${
-                offersOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                  offersOpen
+                    ? "bg-slate-950/10 text-slate-950"
+                    : "bg-white/8 text-cyan-200"
+                }`}
+              >
+                <Ticket size={20} />
+              </span>
+              <span className="flex-1 text-left">Offres WiFi</span>
+              <ChevronDown
+                size={18}
+                className={`transition-transform ${
+                  offersOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          )}
 
-          {offersOpen && (
+          {canUseOffers && offersOpen && (
             <div className="ml-6 mt-2 space-y-1 border-l border-white/10 pl-4">
               {offerLinks.map((link) => (
                 <NavLink

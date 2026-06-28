@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
     .from("clients")
     .update({
       email_verified: true,
-      statut: "actif",
       verification_token_hash: null,
       verification_expires_at: null,
     })

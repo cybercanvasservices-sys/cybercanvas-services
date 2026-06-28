@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
+import { isAdminOrActiveClient } from "@/lib/access-control";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,11 +14,7 @@ function getAdminClient() {
 }
 
 export async function GET(request: NextRequest) {
-  const authorized =
-    (await verifyAdminSession(request.cookies.get("admin_session")?.value)) ||
-    (await verifyClientSession(request.cookies.get("client_session")?.value));
-
-  if (!authorized) {
+  if (!(await isAdminOrActiveClient(request))) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 

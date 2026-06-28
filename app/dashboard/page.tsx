@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
 import {
   Camera,
@@ -20,15 +20,77 @@ const SOLDE_DEMO = 0;
 const WHATSAPP_FINALISATION_URL =
   "https://wa.me/22870693326?text=Bonjour%20CyberCanvas%20Services%2C%20je%20viens%20de%20valider%20mon%20email%20et%20je%20souhaite%20finaliser%20mon%20inscription.";
 
+type ClientProfile = {
+  nom?: string | null;
+  entreprise?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  ville?: string | null;
+  statut?: string | null;
+  discussion?: boolean | null;
+  photo?: string | null;
+  email_verified?: boolean | null;
+  created_at?: string | null;
+};
+
+type SessionProfile = {
+  role?: "admin" | "client" | null;
+  email?: string | null;
+  client?: ClientProfile | null;
+};
+
 export default function DashboardPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [session, setSession] = useState<SessionProfile | null>(null);
 
   const commission = Math.round(SOLDE_DEMO * COMMISSION_RATE);
   const netClient = Math.max(SOLDE_DEMO - commission, 0);
   const retraitDisponible = SOLDE_DEMO >= RETRAIT_MINIMUM;
 
-  const initials = useMemo(() => "CC", []);
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: SessionProfile) => {
+        if (!active) return;
+
+        setSession(result);
+        if (result.client?.photo) {
+          setPhoto(result.client.photo);
+        }
+      })
+      .catch(() => {
+        if (active) setSession(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const isAdmin = session?.role === "admin";
+  const client = session?.client || null;
+  const displayName = isAdmin
+    ? "CyberCanvas Services"
+    : client?.nom || session?.email || "Client CyberCanvas";
+  const displayEmail = client?.email || session?.email || "";
+  const displaySubtitle = isAdmin
+    ? "Compte administrateur principal"
+    : client?.entreprise && client.entreprise !== "Non renseignee"
+      ? client.entreprise
+      : "Compte client WiFi";
+  const accountStatus = isAdmin ? "actif" : client?.statut || "en_attente";
+  const isActiveClient = isAdmin || accountStatus === "actif";
+  const initials = useMemo(() => {
+    return displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "CC";
+  }, [displayName]);
 
   function choisirPhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -52,6 +114,7 @@ export default function DashboardPage() {
 
   return (
     <AdminShell title="Mon Profil" breadcrumb="Accueil">
+      {!isActiveClient && (
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-cyan-950 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white">
@@ -77,6 +140,7 @@ export default function DashboardPage() {
           Contacter l'administrateur
         </a>
       </div>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -96,17 +160,31 @@ export default function DashboardPage() {
             </div>
 
             <h2 className="mt-5 text-xl font-black text-slate-900">
-              CyberCanvas Services
+              {displayName}
             </h2>
             <p className="text-sm font-semibold text-slate-500">
-              Compte administrateur principal
+              {displaySubtitle}
             </p>
 
             <div className="mt-5 w-full space-y-3 text-left text-sm font-semibold text-slate-600">
-              <InfoLine label="Role" value="Administrateur" />
-              <InfoLine label="Etat" value="Actif" tone="success" />
-              <InfoLine label="Securite" value="Compte protege" />
-              <InfoLine label="Service" value="Paiement WiFi" />
+              <InfoLine label="Role" value={isAdmin ? "Administrateur" : "Client"} />
+              <InfoLine
+                label="Etat"
+                value={statusLabel(accountStatus)}
+                tone={accountStatus === "actif" ? "success" : "warning"}
+              />
+              <InfoLine
+                label="Email"
+                value={displayEmail || "Non renseigne"}
+              />
+              <InfoLine
+                label="Telephone"
+                value={client?.telephone || "Non renseigne"}
+              />
+              <InfoLine
+                label="Ville"
+                value={client?.ville || "Non renseignee"}
+              />
             </div>
           </div>
         </section>
@@ -124,9 +202,9 @@ export default function DashboardPage() {
                   {initials}
                 </div>
                 <div>
-                  <p className="font-black text-slate-950">CyberCanvas</p>
+                  <p className="font-black text-slate-950">{displayName}</p>
                   <p className="text-sm font-semibold text-slate-500">
-                    Espace administrateur
+                    {isAdmin ? "Espace administrateur" : "Espace client"}
                   </p>
                 </div>
               </div>
@@ -153,7 +231,9 @@ export default function DashboardPage() {
                 ))}
               </div>
               <p className="mt-2 text-sm font-semibold text-slate-500">
-                Qualite de service suivie depuis le tableau de bord.
+                {isActiveClient
+                  ? "Votre espace est pret pour gerer vos services WiFi."
+                  : "Vos services WiFi seront actifs apres validation admin."}
               </p>
             </div>
 
@@ -235,20 +315,34 @@ function InfoLine({
 }: {
   label: string;
   value: string;
-  tone?: "success";
+  tone?: "success" | "warning";
 }) {
+  const toneClass =
+    tone === "success"
+      ? "font-black text-emerald-600"
+      : tone === "warning"
+        ? "font-black text-amber-600"
+        : "font-black text-slate-950";
+
   return (
     <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
       <span>{label}</span>
-      <span
-        className={
-          tone === "success" ? "font-black text-emerald-600" : "font-black text-slate-950"
-        }
-      >
+      <span className={toneClass}>
         {value}
       </span>
     </div>
   );
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    actif: "Actif",
+    en_attente: "En attente",
+    refuse: "Refuse",
+    suspendu: "Suspendu",
+  };
+
+  return labels[status] || status || "En attente";
 }
 
 function MiniStat({

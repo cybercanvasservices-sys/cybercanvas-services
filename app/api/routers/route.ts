@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
+import { isAdminOrActiveClient } from "@/lib/access-control";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,10 +14,7 @@ function getAdminClient() {
 }
 
 async function isAuthorized(request: NextRequest) {
-  return (
-    (await verifyAdminSession(request.cookies.get("admin_session")?.value)) ||
-    (await verifyClientSession(request.cookies.get("client_session")?.value))
-  );
+  return isAdminOrActiveClient(request);
 }
 
 export async function POST(request: NextRequest) {

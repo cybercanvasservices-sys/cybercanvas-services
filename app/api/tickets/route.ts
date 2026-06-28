@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
+import { isAdminOrActiveClient } from "@/lib/access-control";
 import { getTicketsDb } from "@/lib/cloudflare-d1";
 
 type Profil = {
@@ -30,10 +30,7 @@ function getSupabaseAdmin() {
 }
 
 async function isAuthorized(request: NextRequest) {
-  return (
-    (await verifyAdminSession(request.cookies.get("admin_session")?.value)) ||
-    (await verifyClientSession(request.cookies.get("client_session")?.value))
-  );
+  return isAdminOrActiveClient(request);
 }
 
 async function getProfilsMap() {
