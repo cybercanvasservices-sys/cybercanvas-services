@@ -86,29 +86,39 @@ async function createSession(email: string, role: SessionRole) {
 }
 
 async function verifySession(session: string | undefined, role: SessionRole) {
+  const payload = await getSessionPayload(session);
+
+  return Boolean(payload && payload.sub === role);
+}
+
+export async function getSessionPayload(session: string | undefined) {
   if (!session) {
-    return false;
+    return null;
   }
 
   const [encodedPayload, signature] = session.split(".");
 
   if (!encodedPayload || !signature) {
-    return false;
+    return null;
   }
 
   const expectedSignature = await sign(encodedPayload);
 
   if (!expectedSignature || signature !== expectedSignature) {
-    return false;
+    return null;
   }
 
   try {
     const decoded = new TextDecoder().decode(base64UrlDecode(encodedPayload));
     const payload = JSON.parse(decoded) as SessionPayload;
 
-    return payload.sub === role && payload.exp > Math.floor(Date.now() / 1000);
+    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return payload;
   } catch {
-    return false;
+    return null;
   }
 }
 

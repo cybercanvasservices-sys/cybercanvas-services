@@ -22,9 +22,12 @@ const offerLinks = [
   { href: "/retraits", label: "Mes Retraits", icon: Banknote },
 ];
 
-export default function Sidebar() {
+type SidebarRole = "admin" | "client" | null;
+
+export default function Sidebar({ role }: { role?: SidebarRole }) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAdmin = role === "admin";
   const [offersOpen, setOffersOpen] = useState(() =>
     offerLinks.some(
       (link) =>
@@ -53,7 +56,7 @@ export default function Sidebar() {
                 CyberCanvas Services
               </span>
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                Admin
+                {isAdmin ? "Admin" : "Client"}
               </span>
             </div>
           </div>
@@ -67,12 +70,14 @@ export default function Sidebar() {
             pathname={pathname}
           />
 
-          <NavLink
-            href="/utilisateurs"
-            label="Utilisateurs"
-            icon={Users}
-            pathname={pathname}
-          />
+          {isAdmin && (
+            <NavLink
+              href="/utilisateurs"
+              label="Utilisateurs"
+              icon={Users}
+              pathname={pathname}
+            />
+          )}
 
           <button
             type="button"

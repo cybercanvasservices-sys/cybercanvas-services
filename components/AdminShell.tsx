@@ -15,15 +15,40 @@ type AdminShellProps = {
   children: React.ReactNode;
 };
 
+type ConnectedRole = "admin" | "client" | null;
+
 export default function AdminShell({
   title,
   breadcrumb,
   children,
 }: AdminShellProps) {
   const [pendingAccounts, setPendingAccounts] = useState(0);
+  const [role, setRole] = useState<ConnectedRole>(null);
 
   useEffect(() => {
     async function refreshPendingAccounts() {
+      let currentRole: ConnectedRole = null;
+
+      try {
+        const sessionResponse = await fetch("/api/auth/me", { cache: "no-store" });
+
+        if (sessionResponse.ok) {
+          const session = (await sessionResponse.json()) as {
+            role?: ConnectedRole;
+          };
+          currentRole = session.role || null;
+        }
+      } catch {
+        currentRole = null;
+      }
+
+      setRole(currentRole);
+
+      if (currentRole !== "admin") {
+        setPendingAccounts(0);
+        return;
+      }
+
       try {
         const response = await fetch("/api/clients", { cache: "no-store" });
 
@@ -72,7 +97,7 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen bg-[#eef3f8] text-slate-800">
-      <Sidebar />
+      <Sidebar role={role} />
 
       <div className="min-h-screen pl-[276px]">
         <main className="min-w-0">
@@ -97,7 +122,7 @@ export default function AdminShell({
               </div>
 
               <div className="flex items-center gap-3">
-                {pendingAccounts > 0 && (
+                {role === "admin" && pendingAccounts > 0 && (
                   <a
                     href="/utilisateurs"
                     className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700"
@@ -107,7 +132,7 @@ export default function AdminShell({
                   </a>
                 )}
                 <span className="hidden rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700 md:inline-flex">
-                  Administrateur connecte
+                  {role === "admin" ? "Administrateur connecte" : "Client connecte"}
                 </span>
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white">
                   <ShieldCheck size={22} />
