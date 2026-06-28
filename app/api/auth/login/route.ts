@@ -114,13 +114,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (client.statut === "en_attente") {
-        return NextResponse.json(
-          { message: "Votre compte est en cours d'activation." },
-          { status: 403 }
-        );
-      }
-
       if (client.statut === "refuse") {
         return NextResponse.json(
           { message: "Votre demande de compte a ete refusee." },
@@ -168,7 +161,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       message:
-        "Identifiants invalides ou compte non valide. Si vous venez de creer un compte, attendez la validation de l'administrateur.",
+        "Identifiants invalides. Verifiez votre email et votre mot de passe.",
     },
     { status: 401 }
   );

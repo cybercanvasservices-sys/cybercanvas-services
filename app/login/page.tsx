@@ -6,11 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, Lock, ShieldCheck, User, Wifi } from "lucide-react";
 
-type ClientUser = {
-  email: string;
-  statut?: "en_attente" | "actif" | "refuse" | "suspendu";
-};
-
 export default function LoginPage() {
   return (
     <Suspense fallback={<LoginShell />}>
@@ -33,35 +28,6 @@ function LoginContent() {
     event.preventDefault();
     setError("");
     setLoading(true);
-
-    const users = JSON.parse(
-      window.localStorage.getItem("cybercanvas-users-demo") || "[]"
-    ) as ClientUser[];
-    const client = users.find(
-      (user) => user.email.toLowerCase() === email.trim().toLowerCase()
-    );
-
-    if (client) {
-      if (client.statut === "en_attente") {
-        setError("Votre compte est en attente de validation administrateur.");
-        setLoading(false);
-        return;
-      }
-
-      if (client.statut === "refuse") {
-        setError("Votre demande de compte a ete refusee.");
-        setLoading(false);
-        return;
-      }
-
-      if (client.statut === "suspendu") {
-        setError("Votre compte est suspendu. Contactez CyberCanvas Services.");
-        setLoading(false);
-        return;
-      }
-
-      // Les anciens comptes locaux passent maintenant par l'API serveur.
-    }
 
     const response = await fetch("/api/auth/login", {
       method: "POST",

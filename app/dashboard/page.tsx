@@ -6,6 +6,7 @@ import {
   Camera,
   CheckCircle2,
   CreditCard,
+  MessageCircle,
   ShieldCheck,
   Star,
   Upload,
@@ -16,6 +17,8 @@ import {
 const RETRAIT_MINIMUM = 5000;
 const COMMISSION_RATE = 0.1;
 const SOLDE_DEMO = 0;
+const WHATSAPP_FINALISATION_URL =
+  "https://wa.me/22870693326?text=Bonjour%20CyberCanvas%20Services%2C%20je%20viens%20de%20valider%20mon%20email%20et%20je%20souhaite%20finaliser%20mon%20inscription.";
 
 export default function DashboardPage() {
   const [photo, setPhoto] = useState<string | null>(null);
@@ -49,6 +52,32 @@ export default function DashboardPage() {
 
   return (
     <AdminShell title="Mon Profil" breadcrumb="Accueil">
+      <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-cyan-950 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white">
+            <MessageCircle size={22} />
+          </div>
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-700">
+              Finalisation du compte
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-6">
+              Votre email est confirme. Contactez l'administrateur via WhatsApp
+              pour finaliser votre inscription et activer tous les services.
+            </p>
+          </div>
+        </div>
+        <a
+          href={WHATSAPP_FINALISATION_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+        >
+          <MessageCircle size={18} />
+          Contacter l'administrateur
+        </a>
+      </div>
+
       <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <CardTitle title="Etat general" />
