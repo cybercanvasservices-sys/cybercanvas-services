@@ -17,6 +17,8 @@ type AdminShellProps = {
 
 type ConnectedRole = "admin" | "client" | null;
 type ClientInfo = {
+  nom?: string | null;
+  email?: string | null;
   statut?: string | null;
 };
 
@@ -28,6 +30,7 @@ export default function AdminShell({
   const [pendingAccounts, setPendingAccounts] = useState(0);
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
+  const clientDisplayName = client?.nom || client?.email || "Client";
 
   useEffect(() => {
     async function refreshPendingAccounts() {
@@ -104,7 +107,11 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen bg-[#eef3f8] text-slate-800">
-      <Sidebar role={role} clientStatus={client?.statut || null} />
+      <Sidebar
+        role={role}
+        clientStatus={client?.statut || null}
+        clientName={role === "client" ? clientDisplayName : null}
+      />
 
       <div className="min-h-screen pl-[276px]">
         <main className="min-w-0">
@@ -139,7 +146,7 @@ export default function AdminShell({
                   </a>
                 )}
                 <span className="hidden rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700 md:inline-flex">
-                  {role === "admin" ? "Administrateur connecte" : "Client connecte"}
+                  {role === "admin" ? "Administrateur connecte" : clientDisplayName}
                 </span>
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white">
                   <ShieldCheck size={22} />

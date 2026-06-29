@@ -27,9 +27,11 @@ type SidebarRole = "admin" | "client" | null;
 export default function Sidebar({
   role,
   clientStatus,
+  clientName,
 }: {
   role?: SidebarRole;
   clientStatus?: string | null;
+  clientName?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -63,7 +65,7 @@ export default function Sidebar({
                 CyberCanvas Services
               </span>
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                {isAdmin ? "Admin" : "Client"}
+                {isAdmin ? "Admin" : clientName || "Client"}
               </span>
             </div>
           </div>
