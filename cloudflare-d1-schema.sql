@@ -1,6 +1,7 @@
 create table if not exists tickets (
   id integer primary key autoincrement,
   profil_id integer not null,
+  owner_email text,
   username text not null,
   password text not null,
   statut text not null default 'disponible' check (statut in ('disponible', 'vendu', 'reserve', 'expire')),
@@ -10,5 +11,6 @@ create table if not exists tickets (
 );
 
 create index if not exists idx_tickets_profil_id on tickets (profil_id);
+create index if not exists idx_tickets_owner_email on tickets (owner_email);
 create index if not exists idx_tickets_statut on tickets (statut);
 create unique index if not exists idx_tickets_profil_username on tickets (profil_id, username);

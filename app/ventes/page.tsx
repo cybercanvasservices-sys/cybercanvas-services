@@ -3,7 +3,6 @@
 import { Copy, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
-import { supabase } from "@/lib/supabase";
 
 interface Vente {
   id: number;
@@ -23,22 +22,18 @@ export default function VentesPage() {
 
   useEffect(() => {
     async function chargerVentes() {
-      const { data, error } = await supabase
-        .from("ventes")
-        .select(`
-          *,
-          profils (
-            nom
-          )
-        `)
-        .order("id", { ascending: false });
+      const response = await fetch("/api/ventes", { cache: "no-store" });
+      const result = (await response.json()) as {
+        ventes?: Vente[];
+        message?: string;
+      };
 
-      if (error) {
-        console.error(error);
+      if (!response.ok) {
+        console.error(result.message || "Chargement des recettes impossible.");
         return;
       }
 
-      setVentes(data || []);
+      setVentes(result.ventes || []);
     }
 
     void chargerVentes();

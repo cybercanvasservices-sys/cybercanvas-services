@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isAdminOrActiveClient } from "@/lib/access-control";
+import { getRequestAccess } from "@/lib/access-control";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,11 +14,27 @@ function getAdminClient() {
 }
 
 async function isAuthorized(request: NextRequest) {
-  return isAdminOrActiveClient(request);
+  const access = await getRequestAccess(request);
+
+  if (access?.role === "admin") {
+    return access;
+  }
+
+  if (
+    access?.role === "client" &&
+    access.emailVerified &&
+    access.statut === "actif"
+  ) {
+    return access;
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  const access = await isAuthorized(request);
+
+  if (!access) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
@@ -59,6 +75,7 @@ export async function POST(request: NextRequest) {
     systeme,
     dns_name: dnsName,
     adresse,
+    owner_email: access.role === "client" ? access.email : null,
     token,
     statut: "offline",
     credits: 0,
@@ -107,7 +124,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  const access = await isAuthorized(request);
+
+  if (!access) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
@@ -126,11 +145,16 @@ export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
 
   if (id) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("routers")
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
+
+    if (access.role === "client") {
+      query = query.eq("owner_email", access.email);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
@@ -139,10 +163,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ routeur: data });
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("routers")
     .select("*")
     .order("id", { ascending: false });
+
+  if (access.role === "client") {
+    query = query.eq("owner_email", access.email);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
@@ -152,7 +182,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  const access = await isAuthorized(request);
+
+  if (!access) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
@@ -191,20 +223,28 @@ export async function PATCH(request: NextRequest) {
     adresse,
   };
 
-  let { data, error } = await supabase
+  let updateQuery = supabase
     .from("routers")
     .update(fullPayload)
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+
+  if (access.role === "client") {
+    updateQuery = updateQuery.eq("owner_email", access.email);
+  }
+
+  let { data, error } = await updateQuery.select("*").single();
 
   if (error) {
-    const fallback = await supabase
+    let fallbackQuery = supabase
       .from("routers")
       .update({ nom })
-      .eq("id", id)
-      .select("*")
-      .single();
+      .eq("id", id);
+
+    if (access.role === "client") {
+      fallbackQuery = fallbackQuery.eq("owner_email", access.email);
+    }
+
+    const fallback = await fallbackQuery.select("*").single();
 
     data = fallback.data
       ? {
@@ -226,7 +266,9 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthorized(request))) {
+  const access = await isAuthorized(request);
+
+  if (!access) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
@@ -252,7 +294,13 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const { error } = await supabase.from("routers").delete().eq("id", id);
+  let deleteQuery = supabase.from("routers").delete().eq("id", id);
+
+  if (access.role === "client") {
+    deleteQuery = deleteQuery.eq("owner_email", access.email);
+  }
+
+  const { error } = await deleteQuery;
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });

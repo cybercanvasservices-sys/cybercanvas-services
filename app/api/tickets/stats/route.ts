@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-session";
+import { getRequestAccess } from "@/lib/access-control";
 import { getTicketsDb } from "@/lib/cloudflare-d1";
 
 type TicketStat = {
@@ -9,7 +9,16 @@ type TicketStat = {
 };
 
 export async function GET(request: NextRequest) {
-  if (!(await verifyAdminSession(request.cookies.get("admin_session")?.value))) {
+  const access = await getRequestAccess(request);
+
+  if (
+    !(
+      access?.role === "admin" ||
+      (access?.role === "client" &&
+        access.emailVerified &&
+        access.statut === "actif")
+    )
+  ) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
@@ -22,13 +31,23 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { results } = await db
-    .prepare(
-      `select profil_id, statut, count(*) as total
-       from tickets
-       group by profil_id, statut`
-    )
-    .all<TicketStat>();
+  const query =
+    access.role === "client"
+      ? db
+          .prepare(
+            `select profil_id, statut, count(*) as total
+             from tickets
+             where owner_email = ?
+             group by profil_id, statut`
+          )
+          .bind(access.email)
+      : db.prepare(
+          `select profil_id, statut, count(*) as total
+           from tickets
+           group by profil_id, statut`
+        );
+
+  const { results } = await query.all<TicketStat>();
 
   return NextResponse.json({ stats: results || [] });
 }

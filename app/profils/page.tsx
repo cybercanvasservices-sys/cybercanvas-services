@@ -3,7 +3,6 @@
 import { Copy, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/AdminShell";
-import { supabase } from "@/lib/supabase";
 
 type Profil = {
   id: number;
@@ -50,37 +49,23 @@ export default function ProfilsPage() {
   }
 
   async function chargerProfils() {
-    const { data, error } = await supabase
-      .from("profils")
-      .select("*")
-      .order("id", { ascending: false });
+    const response = await fetch("/api/profils", { cache: "no-store" });
+    const result = (await response.json()) as {
+      profils?: Profil[];
+      message?: string;
+    };
 
-    if (error) {
-      console.error(error);
+    if (!response.ok) {
+      console.error(result.message || "Chargement impossible");
       return;
     }
 
-    setProfils(data || []);
+    setProfils(result.profils || []);
     await chargerStatsTickets();
   }
 
   useEffect(() => {
-    async function chargerProfilsInitial() {
-      const { data, error } = await supabase
-        .from("profils")
-        .select("*")
-        .order("id", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      setProfils(data || []);
-      await chargerStatsTickets();
-    }
-
-    void chargerProfilsInitial();
+    void chargerProfils();
   }, []);
 
   async function ajouterProfil() {
@@ -92,24 +77,22 @@ export default function ProfilsPage() {
     setLoading(true);
 
     try {
-      const slug =
-        nom.toLowerCase().replace(/\s+/g, "-") +
-        "-" +
-        Date.now();
+      const response = await fetch("/api/profils", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nom,
+          prix: Number(prix),
+          duree,
+        }),
+      });
 
-      const { error } = await supabase
-        .from("profils")
-        .insert([
-          {
-            nom,
-            prix: Number(prix),
-            duree,
-            slug,
-          },
-        ]);
+      const result = (await response.json()) as { message?: string };
 
-      if (error) {
-        alert(error.message);
+      if (!response.ok) {
+        alert(result.message || "Creation impossible.");
         return;
       }
 
@@ -133,26 +116,33 @@ export default function ProfilsPage() {
 
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("profils")
-      .update({
+    const response = await fetch("/api/profils", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: editingProfil.id,
         nom: editNom,
         prix: Number(editPrix),
         duree: editDuree,
-      })
-      .eq("id", editingProfil.id)
-      .select("*")
-      .single();
+      }),
+    });
 
-    if (error) {
-      alert(error.message);
+    const result = (await response.json()) as {
+      profil?: Profil;
+      message?: string;
+    };
+
+    if (!response.ok || !result.profil) {
+      alert(result.message || "Modification impossible.");
       setLoading(false);
       return;
     }
 
     setProfils((current) =>
       current.map((profil) =>
-        profil.id === editingProfil.id ? data : profil
+        profil.id === editingProfil.id ? result.profil! : profil
       )
     );
     setEditingProfil(null);
@@ -186,13 +176,17 @@ export default function ProfilsPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("profils")
-      .delete()
-      .eq("id", profil.id);
+    const response = await fetch("/api/profils", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: profil.id }),
+    });
 
-    if (error) {
-      alert(error.message);
+    if (!response.ok) {
+      const result = (await response.json()) as { message?: string };
+      alert(result.message || "Suppression impossible.");
       setLoading(false);
       return;
     }

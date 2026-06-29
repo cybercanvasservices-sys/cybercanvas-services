@@ -7,10 +7,12 @@ type Ticket = {
   username: string;
   password: string;
   profil_id: number;
+  owner_email: string | null;
 };
 
 type Profil = {
   prix: number;
+  owner_email: string | null;
 };
 
 function getSupabaseAdmin() {
@@ -125,6 +127,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: profil } = await supabase
+      .from("profils")
+      .select("prix, owner_email")
+      .eq("id", Number(profilId))
+      .single<Profil>();
+
     const ticketDispo = await db
       .prepare(
         `update tickets
@@ -135,7 +143,7 @@ export async function POST(req: Request) {
            order by id asc
            limit 1
          )
-         returning id, username, password, profil_id`
+         returning id, username, password, profil_id, owner_email`
       )
       .bind(identifier, Number(profilId))
       .first<Ticket>();
@@ -150,12 +158,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: profil } = await supabase
-      .from("profils")
-      .select("prix")
-      .eq("id", ticketDispo.profil_id)
-      .single<Profil>();
-
     await supabase.from("ventes").insert([
       {
         profil_id: ticketDispo.profil_id,
@@ -163,6 +165,7 @@ export async function POST(req: Request) {
         montant: profil?.prix || 0,
         telephone: payment.data?.phone_number || "",
         statut: "paye",
+        owner_email: profil?.owner_email || ticketDispo.owner_email || null,
       },
     ]);
 
