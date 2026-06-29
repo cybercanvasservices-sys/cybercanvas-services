@@ -2,14 +2,10 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { ArrowLeft, Mail, Phone, User } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const [form, setForm] = useState({
-    nom: "",
-    telephone: "",
-    email: "",
-  });
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +21,7 @@ export default function ForgotPasswordPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ email }),
     });
 
     const result = (await response.json()) as { message?: string };
@@ -52,34 +48,17 @@ export default function ForgotPasswordPage() {
 
         <h1 className="text-3xl font-black">Mot de passe oublie</h1>
         <p className="mt-2 text-sm leading-6 text-slate-300">
-          Entrez vos informations de compte. Si elles correspondent, un lien de
-          recuperation sera envoye par e-mail.
+          Entrez l'adresse e-mail associee a votre compte. Si elle correspond a
+          un compte CyberCanvas Services, un lien de recuperation sera envoye.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <Field
-            icon={<User />}
-            value={form.nom}
-            placeholder="Nom et prenoms"
-            onChange={(value) => setForm((current) => ({ ...current, nom: value }))}
-          />
-          <Field
-            icon={<Phone />}
-            value={form.telephone}
-            placeholder="Telephone"
-            type="tel"
-            onChange={(value) =>
-              setForm((current) => ({ ...current, telephone: value }))
-            }
-          />
-          <Field
             icon={<Mail />}
-            value={form.email}
+            value={email}
             placeholder="Adresse email"
             type="email"
-            onChange={(value) =>
-              setForm((current) => ({ ...current, email: value }))
-            }
+            onChange={setEmail}
           />
 
           {error && (

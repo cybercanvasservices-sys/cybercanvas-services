@@ -6,10 +6,6 @@ function clean(value: unknown) {
   return String(value || "").trim();
 }
 
-function normalizePhone(value: string) {
-  return value.replace(/\D/g, "");
-}
-
 async function hashToken(token: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -32,37 +28,25 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const nom = clean(body.nom).toLowerCase();
   const email = clean(body.email).toLowerCase();
-  const telephone = normalizePhone(clean(body.telephone));
 
-  if (!nom || !email || !telephone) {
+  if (!email) {
     return NextResponse.json(
-      { message: "Nom, telephone et email sont obligatoires." },
+      { message: "Adresse email obligatoire." },
       { status: 400 }
     );
   }
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, nom, email, telephone")
+    .select("id, nom, email")
     .eq("email", email)
     .maybeSingle();
 
   const genericMessage =
-    "Si les informations correspondent a un compte, un message de recuperation sera envoye.";
+    "Si cette adresse correspond a un compte, un message de recuperation vient d'etre envoye dans votre boite email.";
 
   if (!client) {
-    return NextResponse.json({ message: genericMessage });
-  }
-
-  const clientPhone = normalizePhone(client.telephone || "");
-  const nameMatches = String(client.nom || "").toLowerCase().includes(nom);
-  const phoneMatches =
-    clientPhone.endsWith(telephone.slice(-8)) ||
-    telephone.endsWith(clientPhone.slice(-8));
-
-  if (!nameMatches || !phoneMatches) {
     return NextResponse.json({ message: genericMessage });
   }
 
@@ -102,7 +86,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     message: emailResult.sent
-      ? "Un message de recuperation a ete envoye dans votre boite email."
+      ? genericMessage
       : "Demande enregistree. L'envoi email sera actif apres configuration de RESEND_API_KEY.",
   });
 }
