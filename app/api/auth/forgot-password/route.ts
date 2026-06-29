@@ -43,11 +43,14 @@ export async function POST(request: NextRequest) {
     .eq("email", email)
     .maybeSingle();
 
-  const genericMessage =
-    "Si cette adresse correspond a un compte, un message de recuperation vient d'etre envoye dans votre boite email.";
-
   if (!client) {
-    return NextResponse.json({ message: genericMessage });
+    return NextResponse.json(
+      {
+        message:
+          "Aucun compte CyberCanvas Services n'est associe a cette adresse email.",
+      },
+      { status: 404 }
+    );
   }
 
   const token =
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     message: emailResult.sent
-      ? genericMessage
+      ? "Un lien de recuperation a ete envoye a votre adresse email. Consultez votre boite de reception pour continuer."
       : "Demande enregistree. L'envoi email sera actif apres configuration de RESEND_API_KEY.",
   });
 }

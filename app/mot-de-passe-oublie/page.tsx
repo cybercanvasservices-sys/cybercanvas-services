@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,7 +33,11 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    setMessage(result.message || "Demande envoyee.");
+    setMessage(
+      result.message ||
+        "Un lien de recuperation a ete envoye a votre adresse email."
+    );
+    setSent(true);
   }
 
   return (
@@ -46,41 +51,59 @@ export default function ForgotPasswordPage() {
           Retour connexion
         </Link>
 
-        <h1 className="text-3xl font-black">Mot de passe oublie</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-300">
-          Entrez l'adresse e-mail associee a votre compte. Si elle correspond a
-          un compte CyberCanvas Services, un lien de recuperation sera envoye.
-        </p>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <Field
-            icon={<Mail />}
-            value={email}
-            placeholder="Adresse email"
-            type="email"
-            onChange={setEmail}
-          />
-
-          {error && (
-            <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
-              {error}
+        {sent ? (
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+              <CheckCircle2 size={36} />
             </div>
-          )}
-
-          {message && (
-            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            <h1 className="mt-5 text-3xl font-black">Lien envoye</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
               {message}
-            </div>
-          )}
+            </p>
+            <p className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-3 text-sm text-cyan-100">
+              Verifiez votre boite de reception et vos courriers indesirables.
+              Le lien expire dans 1 heure.
+            </p>
+            <Link
+              href="/login"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-cyan-500 py-3 font-black text-slate-950 transition hover:bg-cyan-300"
+            >
+              Retour a la connexion
+            </Link>
+          </div>
+        ) : (
+          <>
+            <h1 className="text-3xl font-black">Mot de passe oublie</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Entrez l'adresse e-mail associee a votre compte. Si elle existe,
+              nous vous envoyons un lien securise pour changer votre mot de passe.
+            </p>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-cyan-500 py-3 font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Envoi..." : "Recevoir le lien"}
-          </button>
-        </form>
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              <Field
+                icon={<Mail />}
+                value={email}
+                placeholder="Adresse email"
+                type="email"
+                onChange={setEmail}
+              />
+
+              {error && (
+                <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-cyan-500 py-3 font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Verification..." : "Recevoir le lien"}
+              </button>
+            </form>
+          </>
+        )}
       </section>
     </main>
   );
