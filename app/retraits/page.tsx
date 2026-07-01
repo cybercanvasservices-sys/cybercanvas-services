@@ -90,7 +90,7 @@ export default function RetraitsPage() {
               Demandes de retrait
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Verifiez chaque demande avant paiement. Retrait minimum: 5000FCFA.
+              Verifiez chaque demande avant paiement. Retrait minimum: 2000FCFA.
               Commission CyberCanvas Services: 10% sur chaque retrait.
             </p>
           </div>

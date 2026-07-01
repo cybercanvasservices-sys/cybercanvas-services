@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-session";
+import { getSessionPayload, verifyAdminSession } from "@/lib/admin-session";
 import { sendEmail } from "@/lib/email";
 import { hashPassword } from "@/lib/passwords";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
@@ -251,10 +251,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await isAdmin(request))) {
-    return NextResponse.json({ message: "Non autorise." }, { status: 401 });
-  }
-
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -265,6 +261,47 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
+  const admin = await isAdmin(request);
+
+  if (!admin) {
+    const clientSession = await getSessionPayload(
+      request.cookies.get("client_session")?.value
+    );
+
+    if (clientSession?.sub !== "client" || !clientSession.email) {
+      return NextResponse.json({ message: "Non autorise." }, { status: 401 });
+    }
+
+    if (!("photo" in body)) {
+      return NextResponse.json(
+        { message: "Seule la photo du profil peut etre modifiee ici." },
+        { status: 403 }
+      );
+    }
+
+    const photo = clean(body.photo);
+
+    if (photo.length > 900000) {
+      return NextResponse.json(
+        { message: "Photo trop lourde. Choisissez une image plus legere." },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("clients")
+      .update({ photo })
+      .eq("email", clientSession.email)
+      .select("id, nom, entreprise, email, telephone, ville, statut, discussion, photo, created_at")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ client: data });
+  }
+
   const id = Number(body.id);
 
   if (!id) {

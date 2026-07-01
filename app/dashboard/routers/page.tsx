@@ -275,7 +275,7 @@ export default function RoutersPage() {
                 Liste : <span className="font-semibold">Mes Routeurs</span>
               </h2>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
-                Frais de service : 10%. Retrait min. 5000. SMS : 15F/envoi.
+                Frais de service : 10%. Retrait min. 2000. SMS : 15F/envoi.
               </span>
             </div>
 

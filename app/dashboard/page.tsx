@@ -14,7 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-const RETRAIT_MINIMUM = 5000;
+const RETRAIT_MINIMUM = 2000;
 const COMMISSION_RATE = 0.1;
 const SOLDE_DEMO = 0;
 const WHATSAPP_FINALISATION_URL =
@@ -96,8 +96,35 @@ export default function DashboardPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 700000) {
+      setMessage("Photo trop lourde. Choisissez une image plus legere.");
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => setPhoto(String(reader.result));
+    reader.onload = async () => {
+      const photoData = String(reader.result);
+      setPhoto(photoData);
+      setMessage("");
+
+      if (!isAdmin) {
+        const response = await fetch("/api/clients", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ photo: photoData }),
+        });
+        const result = (await response.json()) as { message?: string };
+
+        if (!response.ok) {
+          setMessage(result.message || "Impossible d'enregistrer la photo.");
+          return;
+        }
+
+        setMessage("Photo de profil enregistree.");
+      }
+    };
     reader.readAsDataURL(file);
   }
 

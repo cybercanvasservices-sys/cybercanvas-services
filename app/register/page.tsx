@@ -65,7 +65,7 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
     });
-    setMessage(result.message || "Votre demande a ete envoyee.");
+    setMessage(result.emailSent === false ? result.message || "" : "");
   }
 
   async function resendVerification() {
