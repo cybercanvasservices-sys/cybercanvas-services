@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     message: emailResult.sent
-      ? "Un lien de recuperation a ete envoye a votre adresse email. Consultez votre boite de reception pour continuer."
+      ? "Un lien securise vient d'etre envoye a votre adresse email. Consultez votre boite de reception ou vos courriers indesirables pour continuer; ce lien expire dans 1 heure."
       : "Demande enregistree. L'envoi email sera actif apres configuration de RESEND_API_KEY.",
   });
 }

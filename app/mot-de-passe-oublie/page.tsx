@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
 
     setMessage(
       result.message ||
-        "Un lien de recuperation a ete envoye a votre adresse email."
+        "Un lien securise vient d'etre envoye a votre adresse email. Consultez votre boite de reception ou vos courriers indesirables pour continuer; ce lien expire dans 1 heure."
     );
     setSent(true);
   }
@@ -59,10 +59,6 @@ export default function ForgotPasswordPage() {
             <h1 className="mt-5 text-3xl font-black">Lien envoye</h1>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               {message}
-            </p>
-            <p className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-3 text-sm text-cyan-100">
-              Verifiez votre boite de reception et vos courriers indesirables.
-              Le lien expire dans 1 heure.
             </p>
             <Link
               href="/login"
