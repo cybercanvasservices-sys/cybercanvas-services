@@ -5,14 +5,18 @@ import AdminShell from "@/components/AdminShell";
 import {
   Camera,
   CheckCircle2,
+  Layers,
   MessageCircle,
   Pencil,
   Plus,
+  Router,
   Search,
+  Ticket,
   Trash2,
   User,
   UserCheck,
   UserX,
+  Wallet,
   XCircle,
 } from "lucide-react";
 
@@ -30,6 +34,20 @@ type ClientUser = {
   photo?: string;
   createdAt?: string;
   created_at?: string;
+};
+
+type ClientActivity = {
+  email: string;
+  routeurs: number;
+  routeursOnline: number;
+  profils: number;
+  ticketsDisponibles: number;
+  ticketsVendus: number;
+  ventes: number;
+  revenus: number;
+  commission: number;
+  net: number;
+  derniereActivite: string | null;
 };
 
 const initialUsers: ClientUser[] = [
@@ -95,8 +113,12 @@ export default function UtilisateursPage() {
     photo: "",
     discussion: true,
   });
+  const [activities, setActivities] = useState<Record<string, ClientActivity>>({});
 
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
+  const selectedActivity = selectedUser
+    ? activities[selectedUser.email.toLowerCase()] || null
+    : null;
   const pendingCount = users.filter((user) => user.statut === "en_attente").length;
 
   useEffect(() => {
@@ -121,6 +143,44 @@ export default function UtilisateursPage() {
     }
 
     loadUsersFromServer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadActivities() {
+      try {
+        const response = await fetch("/api/admin/client-activity", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const result = (await response.json()) as {
+          activities?: ClientActivity[];
+        };
+        const nextActivities = Object.fromEntries(
+          (result.activities || []).map((activity) => [
+            activity.email.toLowerCase(),
+            activity,
+          ])
+        );
+
+        if (!cancelled) {
+          setActivities(nextActivities);
+        }
+      } catch {
+        if (!cancelled) {
+          setActivities({});
+        }
+      }
+    }
+
+    void loadActivities();
 
     return () => {
       cancelled = true;
@@ -509,6 +569,73 @@ export default function UtilisateursPage() {
                     <InfoLine label="Statut" value={statusLabel(selectedUser.statut)} />
                     <InfoLine label="Discussion" value={selectedUser.discussion ? "Activee" : "Desactivee"} />
                   </div>
+
+                  <div className="mt-5 rounded-xl border border-cyan-100 bg-white p-4">
+                    <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-600">
+                          Activites du client
+                        </p>
+                        <h4 className="mt-1 text-lg font-black text-slate-950">
+                          Suivi complet
+                        </h4>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-500">
+                        Derniere activite:{" "}
+                        <span className="font-black text-slate-900">
+                          {selectedActivity?.derniereActivite
+                            ? new Date(selectedActivity.derniereActivite).toLocaleString()
+                            : "Aucune activite"}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <ActivityCard
+                        icon={Router}
+                        label="Routeurs"
+                        value={`${selectedActivity?.routeursOnline || 0}/${selectedActivity?.routeurs || 0}`}
+                        detail="Connectes / total"
+                        tone="bg-orange-500"
+                      />
+                      <ActivityCard
+                        icon={Layers}
+                        label="Groupes WiFi"
+                        value={selectedActivity?.profils || 0}
+                        detail="Offres creees"
+                        tone="bg-slate-900"
+                      />
+                      <ActivityCard
+                        icon={Ticket}
+                        label="Tickets"
+                        value={`${selectedActivity?.ticketsVendus || 0}/${(selectedActivity?.ticketsDisponibles || 0) + (selectedActivity?.ticketsVendus || 0)}`}
+                        detail="Vendus / total"
+                        tone="bg-cyan-500"
+                      />
+                      <ActivityCard
+                        icon={Wallet}
+                        label="Revenus"
+                        value={`${(selectedActivity?.revenus || 0).toLocaleString("fr-FR")} FCFA`}
+                        detail={`${selectedActivity?.ventes || 0} vente(s)`}
+                        tone="bg-emerald-500"
+                      />
+                    </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <InfoLine
+                        label="Commission 10%"
+                        value={`${(selectedActivity?.commission || 0).toLocaleString("fr-FR")} FCFA`}
+                      />
+                      <InfoLine
+                        label="Net client estime"
+                        value={`${(selectedActivity?.net || 0).toLocaleString("fr-FR")} FCFA`}
+                      />
+                      <InfoLine
+                        label="Retraits"
+                        value="Suivi admin a connecter"
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex min-h-64 items-center justify-center text-center text-sm text-slate-500">
@@ -596,6 +723,33 @@ function InfoLine({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p className="mt-1 break-words font-black text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function ActivityCard({
+  icon: Icon,
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  detail: string;
+  tone: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone} text-white`}>
+        <Icon size={20} />
+      </div>
+      <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
+      <p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p>
     </div>
   );
 }
