@@ -3,29 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Home, Lock, Mail, Phone, User, Wifi } from "lucide-react";
-
-type PendingClient = {
-  id: number;
-  nom: string;
-  entreprise: string;
-  email: string;
-  telephone: string;
-  ville: string;
-  statut: "en_attente";
-  discussion: boolean;
-  createdAt: string;
-};
-
-const STORAGE_KEY = "cybercanvas-users-demo";
-
-function readUsers() {
-  try {
-    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]") as PendingClient[];
-  } catch {
-    return [];
-  }
-}
+import { CheckCircle2, Home, Lock, Mail, Phone, RefreshCcw, User, Wifi } from "lucide-react";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -37,6 +15,8 @@ export default function RegisterPage() {
   });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resending, setResending] = useState(false);
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -70,30 +50,14 @@ export default function RegisterPage() {
       body: JSON.stringify(form),
     });
 
-    const result = (await response.json()) as { message?: string };
+    const result = (await response.json()) as { message?: string; emailSent?: boolean };
 
     if (!response.ok) {
       setError(result.message || "Impossible d'envoyer la demande.");
       return;
     }
 
-    const users = readUsers();
-
-    const pendingClient: PendingClient = {
-      id: Date.now(),
-      nom: form.nom.trim(),
-      entreprise: "Non renseignee",
-      email: form.email.trim(),
-      telephone: form.telephone.trim(),
-      ville: "Non renseignee",
-      statut: "en_attente",
-      discussion: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([pendingClient, ...users]));
-    window.dispatchEvent(new Event("cybercanvas-users-updated"));
-
+    setRegisteredEmail(form.email.trim());
     setForm({
       nom: "",
       telephone: "",
@@ -102,6 +66,31 @@ export default function RegisterPage() {
       confirmPassword: "",
     });
     setMessage(result.message || "Votre demande a ete envoyee.");
+  }
+
+  async function resendVerification() {
+    if (!registeredEmail) return;
+
+    setResending(true);
+    setError("");
+
+    const response = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: registeredEmail }),
+    });
+    const result = (await response.json()) as { message?: string };
+
+    setResending(false);
+
+    if (!response.ok) {
+      setError(result.message || "Impossible de renvoyer le lien.");
+      return;
+    }
+
+    setMessage(result.message || "Un nouveau lien de validation a ete envoye.");
   }
 
   return (
@@ -141,33 +130,69 @@ export default function RegisterPage() {
               <h1 className="text-3xl font-bold text-white">CyberCanvas Services</h1>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <Field icon={<User />} value={form.nom} placeholder="Nom et prenom" onChange={(value) => updateField("nom", value)} />
-              <Field icon={<Phone />} value={form.telephone} placeholder="Telephone" type="tel" onChange={(value) => updateField("telephone", value)} />
-              <Field icon={<Mail />} value={form.email} placeholder="Adresse email" type="email" onChange={(value) => updateField("email", value)} />
-              <Field icon={<Lock />} value={form.password} placeholder="Mot de passe" type="password" onChange={(value) => updateField("password", value)} />
-              <Field icon={<Lock />} value={form.confirmPassword} placeholder="Confirmer le mot de passe" type="password" onChange={(value) => updateField("confirmPassword", value)} />
-
-              {error && (
-                <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
-                  {error}
+            {registeredEmail ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-center text-emerald-50">
+                  <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-300" />
+                  <h2 className="text-xl font-black text-white">Compte cree</h2>
+                  <p className="mt-2 text-sm leading-6 text-emerald-50/90">
+                    Un lien de validation a ete envoye a{" "}
+                    <span className="font-bold text-white">{registeredEmail}</span>.
+                    Ouvrez votre boite email puis cliquez sur le bouton de confirmation.
+                  </p>
                 </div>
-              )}
 
-              {message && (
-                <div className="flex gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                  <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-                  {message}
-                </div>
-              )}
+                {message && (
+                  <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                    {message}
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-cyan-500 py-3 font-bold text-black transition hover:bg-cyan-400"
-              >
-                Creer le compte
-              </button>
-            </form>
+                {error && (
+                  <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={resending}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 py-3 font-bold text-cyan-100 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCcw size={18} />
+                  {resending ? "Renvoi en cours..." : "Renvoyer le lien"}
+                </button>
+
+                <Link
+                  href="/login"
+                  className="block w-full rounded-xl bg-cyan-500 py-3 text-center font-bold text-black transition hover:bg-cyan-400"
+                >
+                  Aller a la connexion
+                </Link>
+              </div>
+            ) : (
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                <Field icon={<User />} value={form.nom} placeholder="Nom et prenom" onChange={(value) => updateField("nom", value)} />
+                <Field icon={<Phone />} value={form.telephone} placeholder="Telephone" type="tel" onChange={(value) => updateField("telephone", value)} />
+                <Field icon={<Mail />} value={form.email} placeholder="Adresse email" type="email" onChange={(value) => updateField("email", value)} />
+                <Field icon={<Lock />} value={form.password} placeholder="Mot de passe" type="password" onChange={(value) => updateField("password", value)} />
+                <Field icon={<Lock />} value={form.confirmPassword} placeholder="Confirmer le mot de passe" type="password" onChange={(value) => updateField("confirmPassword", value)} />
+
+                {error && (
+                  <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-cyan-500 py-3 font-bold text-black transition hover:bg-cyan-400"
+                >
+                  Creer le compte
+                </button>
+              </form>
+            )}
 
             <div className="mt-6 text-center text-slate-300">
               Deja membre ?

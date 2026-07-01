@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
           <>
             <h1 className="text-3xl font-black">Mot de passe oublie</h1>
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Entrez l'adresse e-mail associee a votre compte. Si elle existe,
+              Entrez l&apos;adresse e-mail associee a votre compte. Si elle existe,
               nous vous envoyons un lien securise pour changer votre mot de passe.
             </p>
 

@@ -125,7 +125,7 @@ export default function DashboardPage() {
               Finalisation du compte
             </p>
             <p className="mt-1 text-sm font-semibold leading-6">
-              Votre email est confirme. Contactez l'administrateur via WhatsApp
+              Votre email est confirme. Contactez l&apos;administrateur via WhatsApp
               pour finaliser votre inscription et activer tous les services.
             </p>
           </div>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
         >
           <MessageCircle size={18} />
-          Contacter l'administrateur
+          Contacter l&apos;administrateur
         </a>
       </div>
       )}

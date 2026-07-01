@@ -28,10 +28,14 @@ export default function Sidebar({
   role,
   clientStatus,
   clientName,
+  open = false,
+  onClose,
 }: {
   role?: SidebarRole;
   clientStatus?: string | null;
   clientName?: string | null;
+  open?: boolean;
+  onClose?: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -55,7 +59,20 @@ export default function Sidebar({
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 w-[276px] overflow-y-auto bg-[#101827] text-slate-200 shadow-xl">
+    <>
+      {open && (
+        <button
+          type="button"
+          aria-label="Fermer le menu"
+          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-[276px] max-w-[82vw] overflow-y-auto bg-[#101827] text-slate-200 shadow-xl transition-transform duration-200 lg:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
       <div className="flex h-full flex-col">
         <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-center gap-3">
@@ -77,6 +94,7 @@ export default function Sidebar({
             label="Mon profil"
             icon={User}
             pathname={pathname}
+            onNavigate={onClose}
           />
 
           {isAdmin && (
@@ -85,6 +103,7 @@ export default function Sidebar({
               label="Utilisateurs"
               icon={Users}
               pathname={pathname}
+              onNavigate={onClose}
             />
           )}
 
@@ -127,6 +146,7 @@ export default function Sidebar({
                   icon={link.icon}
                   pathname={pathname}
                   compact
+                  onNavigate={onClose}
                 />
               ))}
             </div>
@@ -146,7 +166,8 @@ export default function Sidebar({
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -172,12 +193,14 @@ function NavLink({
   icon: Icon,
   pathname,
   compact = false,
+  onNavigate,
 }: {
   href: string;
   label: string;
   icon: React.ElementType;
   pathname: string;
   compact?: boolean;
+  onNavigate?: () => void;
 }) {
   const active =
     pathname === href ||
@@ -186,6 +209,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={`flex items-center gap-3 rounded-xl px-3 text-sm font-bold transition ${
         compact ? "py-2" : "py-3"
       } ${

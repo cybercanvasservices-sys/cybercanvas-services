@@ -30,6 +30,8 @@ export default function AdminShell({
   const [pendingAccounts, setPendingAccounts] = useState(0);
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [idleCountdown, setIdleCountdown] = useState<number | null>(null);
   const clientDisplayName = client?.nom || client?.email || "Client";
 
   useEffect(() => {
@@ -105,41 +107,100 @@ export default function AdminShell({
     };
   }, []);
 
+  useEffect(() => {
+    if (!role) return;
+
+    const warningAfterMs = 14 * 60 * 1000;
+    const logoutAfterMs = 15 * 60 * 1000;
+    let warningTimer: ReturnType<typeof setTimeout>;
+    let logoutTimer: ReturnType<typeof setTimeout>;
+    let countdownTimer: ReturnType<typeof setInterval>;
+
+    async function logoutInactiveUser() {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login?reason=inactive";
+    }
+
+    function clearTimers() {
+      window.clearTimeout(warningTimer);
+      window.clearTimeout(logoutTimer);
+      window.clearInterval(countdownTimer);
+    }
+
+    function resetIdleTimer() {
+      clearTimers();
+      setIdleCountdown(null);
+
+      warningTimer = setTimeout(() => {
+        let secondsLeft = 60;
+        setIdleCountdown(secondsLeft);
+        countdownTimer = setInterval(() => {
+          secondsLeft -= 1;
+          setIdleCountdown(secondsLeft);
+          if (secondsLeft <= 0) {
+            window.clearInterval(countdownTimer);
+          }
+        }, 1000);
+      }, warningAfterMs);
+
+      logoutTimer = setTimeout(() => {
+        void logoutInactiveUser();
+      }, logoutAfterMs);
+    }
+
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    events.forEach((eventName) => {
+      window.addEventListener(eventName, resetIdleTimer, { passive: true });
+    });
+
+    resetIdleTimer();
+
+    return () => {
+      clearTimers();
+      events.forEach((eventName) => {
+        window.removeEventListener(eventName, resetIdleTimer);
+      });
+    };
+  }, [role]);
+
   return (
     <div className="min-h-screen bg-[#eef3f8] text-slate-800">
       <Sidebar
         role={role}
         clientStatus={client?.statut || null}
         clientName={role === "client" ? clientDisplayName : null}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
       />
 
-      <div className="min-h-screen pl-[276px]">
+      <div className="min-h-screen lg:pl-[276px]">
         <main className="min-w-0">
           <header className="border-b border-slate-200 bg-white">
-            <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-3 px-4 py-4 sm:items-center sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
-                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                  onClick={() => setMenuOpen(true)}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
                   aria-label="Menu"
                 >
                   <PanelLeft size={20} />
                 </button>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-600">
                     CyberCanvas Services
                   </p>
-                  <h1 className="text-2xl font-black text-slate-900">
+                  <h1 className="break-words text-xl font-black text-slate-900 sm:text-2xl">
                     {title}
                   </h1>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 {role === "admin" && pendingAccounts > 0 && (
                   <a
                     href="/utilisateurs"
-                    className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700"
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 sm:px-3 sm:text-sm"
                   >
                     <Bell size={16} />
                     {pendingAccounts} validation(s)
@@ -154,13 +215,13 @@ export default function AdminShell({
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#13233f] via-[#164e63] to-[#0ea5a5] px-6 py-8 text-white">
+            <div className="bg-gradient-to-r from-[#13233f] via-[#164e63] to-[#0ea5a5] px-4 py-6 text-white sm:px-6 sm:py-8">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-cyan-100">
                     Accueil / {breadcrumb || title}
                   </p>
-                  <p className="mt-3 max-w-3xl text-lg font-medium text-white/90">
+                  <p className="mt-3 max-w-3xl text-base font-medium leading-7 text-white/90 sm:text-lg">
                     Gerez vos offres WiFi, vos tickets, vos ventes et
                     vos paiements depuis un espace clair et securise.
                   </p>
@@ -173,7 +234,7 @@ export default function AdminShell({
             </div>
           </header>
 
-          <section className="px-6 py-6">
+          <section className="px-4 py-5 sm:px-6 sm:py-6">
             <div className="mb-6 flex gap-3 rounded-xl border border-cyan-100 bg-cyan-50 p-4 text-cyan-950">
               <CircleHelp className="mt-0.5 shrink-0 text-cyan-600" size={20} />
               <p className="text-sm leading-6">
@@ -187,6 +248,25 @@ export default function AdminShell({
           </section>
         </main>
       </div>
+
+      {idleCountdown !== null && idleCountdown > 0 && (
+        <div className="fixed bottom-5 left-1/2 z-[80] w-[calc(100%-32px)] max-w-md -translate-x-1/2 rounded-2xl border border-amber-200 bg-white p-4 text-slate-900 shadow-2xl">
+          <p className="text-sm font-black text-amber-700">
+            Session sur le point d&apos;expirer
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            Inactivite detectee. Deconnexion automatique dans{" "}
+            <span className="font-black text-slate-950">{idleCountdown}s</span>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setIdleCountdown(null)}
+            className="mt-3 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-black text-slate-950"
+          >
+            Je suis toujours la
+          </button>
+        </div>
+      )}
     </div>
   );
 }

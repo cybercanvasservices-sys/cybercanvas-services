@@ -16,6 +16,54 @@ function getAdminAlertEmail() {
   return process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL || "";
 }
 
+function getEmailDomain(email: string) {
+  return email.split("@")[1]?.toLowerCase() || "";
+}
+
+function isAllowedEmail(email: string) {
+  const domain = getEmailDomain(email);
+  const blockedDomains = new Set([
+    "10minutemail.com",
+    "20minutemail.com",
+    "anonaddy.com",
+    "guerrillamail.com",
+    "luxudata.com",
+    "maildrop.cc",
+    "mailinator.com",
+    "moakt.com",
+    "sharklasers.com",
+    "tempmail.com",
+    "temp-mail.org",
+    "throwawaymail.com",
+    "yopmail.com",
+  ]);
+
+  const allowedDomains = new Set([
+    "gmail.com",
+    "googlemail.com",
+    "hotmail.com",
+    "hotmail.fr",
+    "live.com",
+    "live.fr",
+    "msn.com",
+    "outlook.com",
+    "outlook.fr",
+    "yahoo.com",
+    "yahoo.fr",
+    "ymail.com",
+    "icloud.com",
+    "me.com",
+    "proton.me",
+    "protonmail.com",
+    "zoho.com",
+  ]);
+
+  if (!domain || blockedDomains.has(domain)) return false;
+  if (allowedDomains.has(domain)) return true;
+
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain);
+}
+
 async function hashToken(token: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -76,6 +124,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!isAllowedEmail(email)) {
+    return NextResponse.json(
+      {
+        message:
+          "Adresse email non acceptee. Utilisez une adresse fiable comme Gmail, Outlook, Hotmail, Yahoo ou une adresse professionnelle.",
+      },
+      { status: 400 }
+    );
+  }
+
   if (password.length < 8) {
     return NextResponse.json(
       { message: "Le mot de passe doit contenir au moins 8 caracteres." },
@@ -120,7 +178,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
-  await sendEmail({
+  const verificationEmail = await sendEmail({
     to: email,
     subject: "Validation de votre adresse email - CyberCanvas Services",
     html: `
@@ -150,6 +208,17 @@ export async function POST(request: NextRequest) {
     `,
   });
 
+  if (!verificationEmail.sent) {
+    return NextResponse.json(
+      {
+        message:
+          "Votre compte a ete cree, mais le mail de validation n'a pas pu etre envoye. Verifiez l'adresse email ou contactez l'administrateur via WhatsApp.",
+        emailSent: false,
+      },
+      { status: 201 }
+    );
+  }
+
   const adminAlertEmail = getAdminAlertEmail();
 
   if (adminAlertEmail) {
@@ -177,6 +246,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     message:
       "Votre compte a ete cree. Consultez votre boite email pour confirmer votre inscription.",
+    emailSent: true,
   });
 }
 

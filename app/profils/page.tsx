@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminShell from "@/components/AdminShell";
 
 type Profil = {
@@ -33,7 +33,7 @@ export default function ProfilsPage() {
   const [loading, setLoading] = useState(false);
   const [ticketStats, setTicketStats] = useState<TicketStat[]>([]);
 
-  async function chargerStatsTickets() {
+  const chargerStatsTickets = useCallback(async function chargerStatsTickets() {
     try {
       const response = await fetch("/api/tickets/stats", { cache: "no-store" });
       const result = (await response.json()) as {
@@ -46,9 +46,9 @@ export default function ProfilsPage() {
     } catch {
       setTicketStats([]);
     }
-  }
+  }, []);
 
-  async function chargerProfils() {
+  const chargerProfils = useCallback(async function chargerProfils() {
     const response = await fetch("/api/profils", { cache: "no-store" });
     const result = (await response.json()) as {
       profils?: Profil[];
@@ -62,11 +62,15 @@ export default function ProfilsPage() {
 
     setProfils(result.profils || []);
     await chargerStatsTickets();
-  }
+  }, [chargerStatsTickets]);
 
   useEffect(() => {
-    void chargerProfils();
-  }, []);
+    const timer = window.setTimeout(() => {
+      void chargerProfils();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [chargerProfils]);
 
   async function ajouterProfil() {
     if (!nom || !prix || !duree) {

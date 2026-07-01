@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, Lock, ShieldCheck, User, Wifi } from "lucide-react";
+import { Home, Lock, RefreshCcw, ShieldCheck, User, Wifi } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -22,11 +22,20 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState(
+    searchParams.get("reason") === "inactive"
+      ? "Votre session a expire pour cause d'inactivite. Reconnectez-vous pour continuer."
+      : ""
+  );
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setInfo("");
+    setNeedsVerification(false);
     setLoading(true);
 
     const response = await fetch("/api/auth/login", {
@@ -45,13 +54,45 @@ function LoginContent() {
         message?: string;
       };
 
-      setError(result.message || "Connexion impossible");
+      const message = result.message || "Connexion impossible";
+      setError(message);
+      setNeedsVerification(message.toLowerCase().includes("confirmer"));
       setLoading(false);
       return;
     }
 
     router.replace(nextUrl);
     router.refresh();
+  }
+
+  async function resendVerification() {
+    if (!email) {
+      setError("Saisissez votre adresse email avant de demander un nouveau lien.");
+      return;
+    }
+
+    setResending(true);
+    setError("");
+    setInfo("");
+
+    const response = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+    const result = (await response.json()) as { message?: string };
+
+    setResending(false);
+
+    if (!response.ok) {
+      setError(result.message || "Impossible de renvoyer le lien.");
+      return;
+    }
+
+    setInfo(result.message || "Un nouveau lien de validation a ete envoye.");
+    setNeedsVerification(false);
   }
 
   return (
@@ -85,6 +126,12 @@ function LoginContent() {
           </div>
         )}
 
+        {info && (
+          <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-sm text-cyan-100">
+            {info}
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -101,6 +148,18 @@ function LoginContent() {
             Mot de passe oublie ?
           </Link>
         </div>
+
+        {needsVerification && (
+          <button
+            type="button"
+            onClick={resendVerification}
+            disabled={resending}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 py-3 font-bold text-cyan-100 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCcw size={18} />
+            {resending ? "Renvoi en cours..." : "Renvoyer le mail de validation"}
+          </button>
+        )}
       </form>
 
       <div className="mt-5 grid gap-3 text-center text-sm text-slate-300">

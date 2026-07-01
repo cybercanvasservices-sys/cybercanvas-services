@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { verifyAdminSession, getSessionPayload } from "@/lib/admin-session";
+import { getSessionPayload } from "@/lib/admin-session";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 export type RequestAccess =
