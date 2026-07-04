@@ -47,6 +47,10 @@ type ClientActivity = {
   revenus: number;
   commission: number;
   net: number;
+  retraits: number;
+  retraitsEnAttente: number;
+  retraitsValides: number;
+  montantRetraitsNet: number;
   derniereActivite: string | null;
   details?: {
     routeurs: RouterDetail[];
@@ -672,7 +676,7 @@ export default function UtilisateursPage() {
                       />
                       <InfoLine
                         label="Retraits"
-                        value="Suivi admin a connecter"
+                        value={`${selectedActivity?.retraitsEnAttente || 0} en attente / ${selectedActivity?.retraitsValides || 0} valides`}
                       />
                     </div>
 

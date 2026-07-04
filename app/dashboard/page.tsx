@@ -134,9 +134,7 @@ export default function DashboardPage() {
       return;
     }
 
-    setMessage(
-      `Demande envoyee. Montant net estime: ${netClient} FCFA apres commission.`
-    );
+    window.location.href = "/retraits";
   }
 
   return (

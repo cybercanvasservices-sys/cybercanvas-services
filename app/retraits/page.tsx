@@ -1,34 +1,36 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
-import { CheckCircle2, Clock, Search, Wallet, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Search, Send, Wallet, XCircle } from "lucide-react";
 
-const RETRAITS_STORAGE_KEY = "cybercanvas-retraits-demo";
+const RETRAIT_MINIMUM = 2000;
+const COMMISSION_RATE = 0.1;
 
 type RetraitStatus = "en_attente" | "valide" | "refuse";
 
 type RetraitRequest = {
   id: number;
-  nom: string;
+  owner_email: string;
+  client_nom: string;
+  client_telephone?: string | null;
+  numero_paiement: string;
   montant: number;
-  commission?: number;
-  net?: number;
+  commission: number;
+  net: number;
   statut: RetraitStatus;
-  createdAt: string;
+  note_admin?: string | null;
+  created_at: string;
+  updated_at?: string | null;
 };
 
-function loadRetraits() {
-  if (typeof window === "undefined") return [];
-
-  try {
-    return JSON.parse(
-      window.localStorage.getItem(RETRAITS_STORAGE_KEY) || "[]"
-    ) as RetraitRequest[];
-  } catch {
-    return [];
-  }
-}
+type SessionResponse = {
+  role?: "admin" | "client" | null;
+  client?: {
+    nom?: string | null;
+    telephone?: string | null;
+  } | null;
+};
 
 function statusLabel(status: RetraitStatus) {
   const labels = {
@@ -40,13 +42,54 @@ function statusLabel(status: RetraitStatus) {
   return labels[status];
 }
 
+function formatMoney(value: number) {
+  return `${Number(value || 0).toLocaleString("fr-FR")} FCFA`;
+}
+
+function calculateAmounts(montant: number) {
+  const commission = Math.round(montant * COMMISSION_RATE);
+  const net = Math.max(montant - commission, 0);
+
+  return { commission, net };
+}
+
 export default function RetraitsPage() {
-  const [retraits, setRetraits] = useState<RetraitRequest[]>(loadRetraits);
+  const [retraits, setRetraits] = useState<RetraitRequest[]>([]);
   const [search, setSearch] = useState("");
+  const [role, setRole] = useState<"admin" | "client" | null>(null);
+  const [montant, setMontant] = useState("");
+  const [numeroPaiement, setNumeroPaiement] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    window.localStorage.setItem(RETRAITS_STORAGE_KEY, JSON.stringify(retraits));
-  }, [retraits]);
+    async function loadSession() {
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      const result = (await response.json()) as SessionResponse;
+
+      setRole(result.role || null);
+      setNumeroPaiement(result.client?.telephone || "");
+    }
+
+    async function loadRetraits() {
+      const response = await fetch("/api/retraits", { cache: "no-store" });
+      const result = (await response.json()) as {
+        retraits?: RetraitRequest[];
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setError(result.message || "Chargement des retraits impossible.");
+        return;
+      }
+
+      setRetraits(result.retraits || []);
+    }
+
+    void loadSession();
+    void loadRetraits();
+  }, []);
 
   const filteredRetraits = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -54,7 +97,14 @@ export default function RetraitsPage() {
     if (!value) return retraits;
 
     return retraits.filter((retrait) =>
-      [retrait.nom, retrait.montant, statusLabel(retrait.statut)]
+      [
+        retrait.client_nom,
+        retrait.owner_email,
+        retrait.numero_paiement,
+        retrait.montant,
+        retrait.net,
+        statusLabel(retrait.statut),
+      ]
         .join(" ")
         .toLowerCase()
         .includes(value)
@@ -63,17 +113,82 @@ export default function RetraitsPage() {
 
   const totalEnAttente = retraits
     .filter((retrait) => retrait.statut === "en_attente")
-    .reduce((total, retrait) => total + (retrait.net ?? retrait.montant), 0);
+    .reduce((total, retrait) => total + retrait.net, 0);
+  const montantNumber = Number(montant || 0);
+  const preview = calculateAmounts(montantNumber);
 
-  function updateStatus(id: number, statut: RetraitStatus) {
+  async function refreshRetraits() {
+    const response = await fetch("/api/retraits", { cache: "no-store" });
+    const result = (await response.json()) as {
+      retraits?: RetraitRequest[];
+      message?: string;
+    };
+
+    if (!response.ok) {
+      setError(result.message || "Actualisation impossible.");
+      return;
+    }
+
+    setRetraits(result.retraits || []);
+  }
+
+  async function requestRetrait(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    const response = await fetch("/api/retraits", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        montant: montantNumber,
+        numero_paiement: numeroPaiement,
+      }),
+    });
+    const result = (await response.json()) as {
+      retrait?: RetraitRequest;
+      message?: string;
+    };
+
+    setLoading(false);
+
+    if (!response.ok || !result.retrait) {
+      setError(result.message || "Demande de retrait impossible.");
+      return;
+    }
+
+    setMontant("");
+    setMessage("Demande de retrait envoyee. Elle sera verifiee avant paiement.");
+    await refreshRetraits();
+  }
+
+  async function updateStatus(id: number, statut: RetraitStatus) {
+    setError("");
+    setMessage("");
+
+    const response = await fetch("/api/retraits", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, statut }),
+    });
+    const result = (await response.json()) as {
+      retrait?: RetraitRequest;
+      message?: string;
+    };
+
+    if (!response.ok || !result.retrait) {
+      setError(result.message || "Modification impossible.");
+      return;
+    }
+
     setRetraits((current) =>
       current.map((retrait) =>
-        retrait.id === id
-          ? {
-              ...retrait,
-              statut,
-            }
-          : retrait
+        retrait.id === id ? result.retrait as RetraitRequest : retrait
       )
     );
   }
@@ -84,19 +199,19 @@ export default function RetraitsPage() {
         <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-600">
-              Validation admin
+              {role === "admin" ? "Validation admin" : "Demande client"}
             </p>
             <h2 className="mt-2 text-2xl font-black text-slate-950">
-              Demandes de retrait
+              {role === "admin" ? "Demandes de retrait" : "Mes retraits"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Verifiez chaque demande avant paiement. Retrait minimum: 2000FCFA.
-              Commission CyberCanvas Services: 10% sur chaque retrait.
+              Retrait minimum: {RETRAIT_MINIMUM} FCFA. Commission CyberCanvas
+              Services: 10% sur chaque retrait.
             </p>
           </div>
 
           <div className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">
-            En attente: {totalEnAttente} FCFA
+            En attente: {formatMoney(totalEnAttente)}
           </div>
         </div>
 
@@ -122,14 +237,67 @@ export default function RetraitsPage() {
         </div>
       </section>
 
+      {role === "client" && (
+        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-black text-slate-900">
+            Nouvelle demande
+          </h2>
+          <form className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={requestRetrait}>
+            <input
+              value={montant}
+              onChange={(event) => setMontant(event.target.value)}
+              type="number"
+              min={RETRAIT_MINIMUM}
+              placeholder="Montant brut"
+              className="rounded-lg border border-slate-300 p-3 outline-none focus:border-cyan-500"
+            />
+            <input
+              value={numeroPaiement}
+              onChange={(event) => setNumeroPaiement(event.target.value)}
+              placeholder="Numero Mixx/Flooz"
+              className="rounded-lg border border-slate-300 p-3 outline-none focus:border-cyan-500"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3 font-black text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              <Send size={17} />
+              Envoyer
+            </button>
+          </form>
+          {montantNumber > 0 && (
+            <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+              <Info label="Montant brut" value={formatMoney(montantNumber)} />
+              <Info label="Commission 10%" value={formatMoney(preview.commission)} />
+              <Info label="Net a payer" value={formatMoney(preview.net)} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {(message || error) && (
+        <div
+          className={`mt-6 rounded-xl border p-4 text-sm font-bold ${
+            error
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          {error || message}
+        </div>
+      )}
+
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
           <div>
             <h2 className="text-lg font-black text-slate-900">
-              Liste des retraits
+              Historique des retraits
             </h2>
             <p className="text-sm text-slate-500">
-              Validez uniquement apres verification du compte et du montant.
+              {role === "admin"
+                ? "Validez uniquement apres verification du compte et du montant."
+                : "Suivez ici vos demandes et leur statut."}
             </p>
           </div>
           <div className="relative w-full md:w-72">
@@ -155,30 +323,29 @@ export default function RetraitsPage() {
                 className="rounded-xl border border-slate-200 bg-slate-50 p-4"
               >
                 <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-lg font-black text-slate-900">
-                      {retrait.nom}
+                      {retrait.client_nom || retrait.owner_email}
                     </h3>
+                    <p className="mt-1 break-words text-sm text-slate-500">
+                      {retrait.owner_email} - {retrait.numero_paiement}
+                    </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Demande du {new Date(retrait.createdAt).toLocaleString("fr-FR")}
+                      Demande du {new Date(retrait.created_at).toLocaleString("fr-FR")}
                     </p>
                     <p className="mt-2 text-2xl font-black text-emerald-600">
-                      {retrait.net ?? retrait.montant} FCFA
+                      {formatMoney(retrait.net)}
                     </p>
                     <div className="mt-2 grid gap-1 text-sm font-semibold text-slate-600 sm:grid-cols-3">
-                      <span>Brut: {retrait.montant} FCFA</span>
-                      <span>
-                        Commission: {retrait.commission ?? Math.round(retrait.montant * 0.1)} FCFA
-                      </span>
-                      <span>
-                        Net client: {retrait.net ?? retrait.montant - Math.round(retrait.montant * 0.1)} FCFA
-                      </span>
+                      <span>Brut: {formatMoney(retrait.montant)}</span>
+                      <span>Commission: {formatMoney(retrait.commission)}</span>
+                      <span>Net client: {formatMoney(retrait.net)}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     <StatusBadge status={retrait.statut} />
-                    {retrait.statut === "en_attente" && (
+                    {role === "admin" && retrait.statut === "en_attente" && (
                       <>
                         <button
                           type="button"
@@ -245,5 +412,13 @@ function StatusBadge({ status }: { status: RetraitStatus }) {
   );
 }
 
-
-
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+    </div>
+  );
+}

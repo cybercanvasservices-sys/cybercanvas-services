@@ -14,6 +14,10 @@ type ActivitySummary = {
   revenus: number;
   commission: number;
   net: number;
+  retraits: number;
+  retraitsEnAttente: number;
+  retraitsValides: number;
+  montantRetraitsNet: number;
   derniereActivite: string | null;
   details: {
     routeurs: RouterDetail[];
@@ -46,6 +50,15 @@ type VenteRow = OwnerRow & {
   profils?: {
     nom?: string | null;
   } | null;
+};
+
+type RetraitRow = OwnerRow & {
+  id?: number | null;
+  montant?: number | null;
+  commission?: number | null;
+  net?: number | null;
+  statut?: string | null;
+  created_at?: string | null;
 };
 
 type TicketStatRow = {
@@ -108,6 +121,10 @@ function emptySummary(email: string): ActivitySummary {
     revenus: 0,
     commission: 0,
     net: 0,
+    retraits: 0,
+    retraitsEnAttente: 0,
+    retraitsValides: 0,
+    montantRetraitsNet: 0,
     derniereActivite: null,
     details: {
       routeurs: [],
@@ -166,7 +183,13 @@ export async function GET(request: NextRequest) {
 
   const summaries = new Map<string, ActivitySummary>();
 
-  const [{ data: clients }, { data: routeurs }, { data: profils }, { data: ventes }] =
+  const [
+    { data: clients },
+    { data: routeurs },
+    { data: profils },
+    { data: ventes },
+    { data: retraits },
+  ] =
     await Promise.all([
       supabase.from("clients").select("email"),
       supabase
@@ -178,6 +201,9 @@ export async function GET(request: NextRequest) {
       supabase
         .from("ventes")
         .select("id, owner_email, montant, telephone, statut, created_at, profils ( nom )"),
+      supabase
+        .from("retraits")
+        .select("id, owner_email, montant, commission, net, statut, created_at"),
     ]);
 
   const profilOwnerById = new Map<number, string>();
@@ -257,6 +283,22 @@ export async function GET(request: NextRequest) {
       statut: vente.statut || "paye",
       createdAt: vente.created_at || null,
     });
+  });
+
+  ((retraits || []) as RetraitRow[]).forEach((retrait) => {
+    const summary = getSummary(summaries, retrait.owner_email || "");
+    if (!summary) return;
+
+    summary.retraits += 1;
+    summary.montantRetraitsNet += Number(retrait.net || 0);
+    updateLastActivity(summary, retrait.created_at);
+
+    const statut = String(retrait.statut || "").toLowerCase();
+    if (statut === "valide") {
+      summary.retraitsValides += 1;
+    } else if (statut === "en_attente") {
+      summary.retraitsEnAttente += 1;
+    }
   });
 
   const db = await getTicketsDb();
