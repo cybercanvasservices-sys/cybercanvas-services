@@ -48,6 +48,42 @@ type ClientActivity = {
   commission: number;
   net: number;
   derniereActivite: string | null;
+  details?: {
+    routeurs: RouterDetail[];
+    profils: ProfilDetail[];
+    ventesRecentes: VenteDetail[];
+  };
+};
+
+type RouterDetail = {
+  id: number | null;
+  nom: string;
+  systeme: string;
+  dnsName: string;
+  adresse: string;
+  statut: string;
+  credits: number;
+};
+
+type ProfilDetail = {
+  id: number;
+  nom: string;
+  prix: number;
+  duree: string;
+  slug: string;
+  ticketsDisponibles: number;
+  ticketsVendus: number;
+  revenus: number;
+  ventes: number;
+};
+
+type VenteDetail = {
+  id: number | null;
+  profil: string;
+  montant: number;
+  telephone: string;
+  statut: string;
+  createdAt: string | null;
 };
 
 const initialUsers: ClientUser[] = [
@@ -80,6 +116,10 @@ function normalizeUser(user: ClientUser): ClientUser {
     telephone: user.telephone.includes("*") ? user.telephone : maskPhone(user.telephone),
     createdAt: user.createdAt || user.created_at || new Date().toISOString(),
   };
+}
+
+function formatMoney(value: number) {
+  return `${Number(value || 0).toLocaleString("fr-FR")} FCFA`;
 }
 
 function loadInitialUsers() {
@@ -615,7 +655,7 @@ export default function UtilisateursPage() {
                       <ActivityCard
                         icon={Wallet}
                         label="Revenus"
-                        value={`${(selectedActivity?.revenus || 0).toLocaleString("fr-FR")} FCFA`}
+                        value={formatMoney(selectedActivity?.revenus || 0)}
                         detail={`${selectedActivity?.ventes || 0} vente(s)`}
                         tone="bg-emerald-500"
                       />
@@ -624,15 +664,80 @@ export default function UtilisateursPage() {
                     <div className="mt-4 grid gap-3 md:grid-cols-3">
                       <InfoLine
                         label="Commission 10%"
-                        value={`${(selectedActivity?.commission || 0).toLocaleString("fr-FR")} FCFA`}
+                        value={formatMoney(selectedActivity?.commission || 0)}
                       />
                       <InfoLine
                         label="Net client estime"
-                        value={`${(selectedActivity?.net || 0).toLocaleString("fr-FR")} FCFA`}
+                        value={formatMoney(selectedActivity?.net || 0)}
                       />
                       <InfoLine
                         label="Retraits"
                         value="Suivi admin a connecter"
+                      />
+                    </div>
+
+                    <div className="mt-5 grid gap-4">
+                      <DetailPanel
+                        title="Profils, tickets et revenus"
+                        empty="Aucun profil cree par ce client."
+                        items={selectedActivity?.details?.profils || []}
+                        renderItem={(profil) => (
+                          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] md:items-center">
+                            <div>
+                              <p className="font-black text-slate-950">{profil.nom}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                {profil.duree} - {formatMoney(profil.prix)}
+                              </p>
+                            </div>
+                            <Metric label="Disponibles" value={profil.ticketsDisponibles} />
+                            <Metric label="Vendus" value={profil.ticketsVendus} />
+                            <Metric label="Ventes" value={profil.ventes} />
+                            <Metric label="Revenus" value={formatMoney(profil.revenus)} />
+                          </div>
+                        )}
+                      />
+
+                      <DetailPanel
+                        title="Routeurs et informations techniques"
+                        empty="Aucun routeur ajoute par ce client."
+                        items={selectedActivity?.details?.routeurs || []}
+                        renderItem={(routeur) => (
+                          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:grid-cols-[1.2fr_0.8fr_1fr_1fr_0.7fr] lg:items-center">
+                            <div>
+                              <p className="font-black text-slate-950">{routeur.nom}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                ID: {routeur.id || "-"}
+                              </p>
+                            </div>
+                            <Metric label="Systeme" value={routeur.systeme} />
+                            <Metric label="DNS" value={routeur.dnsName} />
+                            <Metric label="Adresse" value={routeur.adresse} />
+                            <Metric label="Statut" value={routeur.statut} />
+                          </div>
+                        )}
+                      />
+
+                      <DetailPanel
+                        title="Dernieres ventes"
+                        empty="Aucune vente enregistree pour ce client."
+                        items={selectedActivity?.details?.ventesRecentes || []}
+                        renderItem={(vente) => (
+                          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1fr] lg:items-center">
+                            <div>
+                              <p className="font-black text-slate-950">{vente.profil}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                Vente #{vente.id || "-"}
+                              </p>
+                            </div>
+                            <Metric label="Montant" value={formatMoney(vente.montant)} />
+                            <Metric label="Telephone" value={vente.telephone} />
+                            <Metric label="Statut" value={vente.statut} />
+                            <Metric
+                              label="Date"
+                              value={vente.createdAt ? new Date(vente.createdAt).toLocaleString() : "-"}
+                            />
+                          </div>
+                        )}
                       />
                     </div>
                   </div>
@@ -750,6 +855,54 @@ function ActivityCard({
       </p>
       <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
       <p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function DetailPanel<T>({
+  title,
+  empty,
+  items,
+  renderItem,
+}: {
+  title: string;
+  empty: string;
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h5 className="text-sm font-black uppercase tracking-[0.14em] text-slate-700">
+          {title}
+        </h5>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+          {items.length}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm font-semibold text-slate-500">
+          {empty}
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {items.map((item, index) => (
+            <div key={index}>{renderItem(item)}</div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 break-words font-black text-slate-900">{value}</p>
     </div>
   );
 }
