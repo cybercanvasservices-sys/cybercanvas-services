@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
 import {
@@ -235,18 +236,31 @@ export default function UtilisateursPage() {
     window.dispatchEvent(new Event("cybercanvas-users-updated"));
   }, [users]);
 
+  function userMatchesSearch(user: ClientUser, value: string) {
+    return [user.nom, user.entreprise, user.email, user.telephone, user.ville, user.statut]
+      .join(" ")
+      .toLowerCase()
+      .includes(value);
+  }
+
   const filteredUsers = useMemo(() => {
     const value = search.trim().toLowerCase();
 
     if (!value) return users;
 
-    return users.filter((user) =>
-      [user.nom, user.entreprise, user.email, user.telephone, user.ville, user.statut]
-        .join(" ")
-        .toLowerCase()
-        .includes(value)
-    );
+    return users.filter((user) => userMatchesSearch(user, value));
   }, [search, users]);
+
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextSearch = event.target.value;
+    const value = nextSearch.trim().toLowerCase();
+    const nextUser = value
+      ? users.find((user) => userMatchesSearch(user, value)) || null
+      : users[0] || null;
+
+    setSearch(nextSearch);
+    setSelectedUserId(nextUser?.id || null);
+  }
 
   const activeUser = useMemo(() => {
     const selectedFromFiltered = filteredUsers.find((user) => user.id === selectedUserId);
@@ -495,7 +509,7 @@ export default function UtilisateursPage() {
               <Search className="absolute left-3 top-3 text-slate-400" size={17} />
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={handleSearchChange}
                 placeholder="Rechercher"
                 className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 outline-none focus:border-cyan-500"
               />
