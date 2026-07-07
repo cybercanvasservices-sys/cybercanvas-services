@@ -160,9 +160,6 @@ export default function UtilisateursPage() {
   const [activities, setActivities] = useState<Record<string, ClientActivity>>({});
 
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
-  const selectedActivity = selectedUser
-    ? activities[selectedUser.email.toLowerCase()] || null
-    : null;
   const pendingCount = users.filter((user) => user.statut === "en_attente").length;
 
   useEffect(() => {
@@ -250,6 +247,20 @@ export default function UtilisateursPage() {
         .includes(value)
     );
   }, [search, users]);
+
+  const activeUser = useMemo(() => {
+    const selectedFromFiltered = filteredUsers.find((user) => user.id === selectedUserId);
+
+    if (search.trim()) {
+      return selectedFromFiltered || filteredUsers[0] || null;
+    }
+
+    return selectedUser;
+  }, [filteredUsers, search, selectedUser, selectedUserId]);
+
+  const activeActivity = activeUser
+    ? activities[activeUser.email.toLowerCase()] || null
+    : null;
 
   function resetForm() {
     setForm({
@@ -502,7 +513,7 @@ export default function UtilisateursPage() {
                   <article
                     key={user.id}
                     className={`rounded-xl border p-4 transition ${
-                      selectedUserId === user.id
+                      activeUser?.id === user.id
                         ? "border-cyan-300 bg-cyan-50"
                         : "border-slate-200 bg-slate-50 hover:bg-white"
                     }`}
@@ -588,30 +599,30 @@ export default function UtilisateursPage() {
             </div>
 
             <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              {selectedUser ? (
+              {activeUser ? (
                 <div>
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-4">
-                    <Avatar user={selectedUser} large />
+                    <Avatar user={activeUser} large />
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-600">
                         Profil client
                       </p>
                       <h3 className="text-lg font-black text-slate-900">
-                        {selectedUser.nom}
+                        {activeUser.nom}
                       </h3>
                     </div>
                     </div>
-                    <StatusBadge status={selectedUser.statut} />
+                    <StatusBadge status={activeUser.statut} />
                   </div>
 
                   <div className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
-                    <InfoLine label="Entreprise" value={selectedUser.entreprise || "Non renseignee"} />
-                    <InfoLine label="Email" value={selectedUser.email} />
-                    <InfoLine label="Telephone" value={selectedUser.telephone} />
-                    <InfoLine label="Ville" value={selectedUser.ville} />
-                    <InfoLine label="Statut" value={statusLabel(selectedUser.statut)} />
-                    <InfoLine label="Discussion" value={selectedUser.discussion ? "Activee" : "Desactivee"} />
+                    <InfoLine label="Entreprise" value={activeUser.entreprise || "Non renseignee"} />
+                    <InfoLine label="Email" value={activeUser.email} />
+                    <InfoLine label="Telephone" value={activeUser.telephone} />
+                    <InfoLine label="Ville" value={activeUser.ville} />
+                    <InfoLine label="Statut" value={statusLabel(activeUser.statut)} />
+                    <InfoLine label="Discussion" value={activeUser.discussion ? "Activee" : "Desactivee"} />
                   </div>
 
                   <div className="mt-5 rounded-xl border border-cyan-100 bg-white p-4">
@@ -627,8 +638,8 @@ export default function UtilisateursPage() {
                       <p className="text-sm font-semibold text-slate-500">
                         Derniere activite:{" "}
                         <span className="font-black text-slate-900">
-                          {selectedActivity?.derniereActivite
-                            ? new Date(selectedActivity.derniereActivite).toLocaleString()
+                          {activeActivity?.derniereActivite
+                            ? new Date(activeActivity.derniereActivite).toLocaleString()
                             : "Aucune activite"}
                         </span>
                       </p>
@@ -638,29 +649,29 @@ export default function UtilisateursPage() {
                       <ActivityCard
                         icon={Router}
                         label="Routeurs"
-                        value={`${selectedActivity?.routeursOnline || 0}/${selectedActivity?.routeurs || 0}`}
+                        value={`${activeActivity?.routeursOnline || 0}/${activeActivity?.routeurs || 0}`}
                         detail="Connectes / total"
                         tone="bg-orange-500"
                       />
                       <ActivityCard
                         icon={Layers}
                         label="Groupes WiFi"
-                        value={selectedActivity?.profils || 0}
+                        value={activeActivity?.profils || 0}
                         detail="Offres creees"
                         tone="bg-slate-900"
                       />
                       <ActivityCard
                         icon={Ticket}
                         label="Tickets"
-                        value={`${selectedActivity?.ticketsVendus || 0}/${(selectedActivity?.ticketsDisponibles || 0) + (selectedActivity?.ticketsVendus || 0)}`}
+                        value={`${activeActivity?.ticketsVendus || 0}/${(activeActivity?.ticketsDisponibles || 0) + (activeActivity?.ticketsVendus || 0)}`}
                         detail="Vendus / total"
                         tone="bg-cyan-500"
                       />
                       <ActivityCard
                         icon={Wallet}
                         label="Revenus"
-                        value={formatMoney(selectedActivity?.revenus || 0)}
-                        detail={`${selectedActivity?.ventes || 0} vente(s)`}
+                        value={formatMoney(activeActivity?.revenus || 0)}
+                        detail={`${activeActivity?.ventes || 0} vente(s)`}
                         tone="bg-emerald-500"
                       />
                     </div>
@@ -668,15 +679,15 @@ export default function UtilisateursPage() {
                     <div className="mt-4 grid gap-3 md:grid-cols-3">
                       <InfoLine
                         label="Commission 10%"
-                        value={formatMoney(selectedActivity?.commission || 0)}
+                        value={formatMoney(activeActivity?.commission || 0)}
                       />
                       <InfoLine
                         label="Net client estime"
-                        value={formatMoney(selectedActivity?.net || 0)}
+                        value={formatMoney(activeActivity?.net || 0)}
                       />
                       <InfoLine
                         label="Retraits"
-                        value={`${selectedActivity?.retraitsEnAttente || 0} en attente / ${selectedActivity?.retraitsValides || 0} valides`}
+                        value={`${activeActivity?.retraitsEnAttente || 0} en attente / ${activeActivity?.retraitsValides || 0} valides`}
                       />
                     </div>
 
@@ -684,7 +695,7 @@ export default function UtilisateursPage() {
                       <DetailPanel
                         title="Profils, tickets et revenus"
                         empty="Aucun profil cree par ce client."
-                        items={selectedActivity?.details?.profils || []}
+                        items={activeActivity?.details?.profils || []}
                         renderItem={(profil) => (
                           <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] md:items-center">
                             <div>
@@ -704,7 +715,7 @@ export default function UtilisateursPage() {
                       <DetailPanel
                         title="Routeurs et informations techniques"
                         empty="Aucun routeur ajoute par ce client."
-                        items={selectedActivity?.details?.routeurs || []}
+                        items={activeActivity?.details?.routeurs || []}
                         renderItem={(routeur) => (
                           <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:grid-cols-[1.2fr_0.8fr_1fr_1fr_0.7fr] lg:items-center">
                             <div>
@@ -724,7 +735,7 @@ export default function UtilisateursPage() {
                       <DetailPanel
                         title="Dernieres ventes"
                         empty="Aucune vente enregistree pour ce client."
-                        items={selectedActivity?.details?.ventesRecentes || []}
+                        items={activeActivity?.details?.ventesRecentes || []}
                         renderItem={(vente) => (
                           <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_1fr] lg:items-center">
                             <div>
