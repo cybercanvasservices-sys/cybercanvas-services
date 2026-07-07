@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       : db.prepare(
           `select profil_id, statut, count(*) as total
            from tickets
+           where owner_email is null
            group by profil_id, statut`
         );
 

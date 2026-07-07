@@ -57,6 +57,8 @@ async function getProfilsMap(access: RequestAccess) {
 
   if (access?.role === "client") {
     query = query.eq("owner_email", access.email);
+  } else {
+    query = query.is("owner_email", null);
   }
 
   const { data } = await query;
@@ -108,12 +110,12 @@ export async function GET(request: NextRequest) {
   } else if (profilId) {
     query = db
       .prepare(
-        "select id, profil_id, owner_email, username, password, statut from tickets where profil_id = ? order by id desc limit 5000"
+        "select id, profil_id, owner_email, username, password, statut from tickets where profil_id = ? and owner_email is null order by id desc limit 5000"
       )
       .bind(Number(profilId));
   } else {
     query = db.prepare(
-      "select id, profil_id, owner_email, username, password, statut from tickets order by id desc limit 5000"
+      "select id, profil_id, owner_email, username, password, statut from tickets where owner_email is null order by id desc limit 5000"
     );
   }
 
@@ -164,6 +166,10 @@ export async function POST(request: NextRequest) {
 
   if (access.role === "client" && !(await clientOwnsProfil(access.email, profilId))) {
     return NextResponse.json({ message: "Profil non autorise." }, { status: 403 });
+  }
+
+  if (access.role === "admin" && !(await adminOwnsProfil(profilId))) {
+    return NextResponse.json({ message: "Profil administrateur non autorise." }, { status: 403 });
   }
 
   const statements = tickets.map((ticket) =>
@@ -220,10 +226,28 @@ export async function DELETE(request: NextRequest) {
       .bind(profilId, access.email)
       .run();
   } else {
-    await db.prepare("delete from tickets where profil_id = ?").bind(profilId).run();
+    await db
+      .prepare("delete from tickets where profil_id = ? and owner_email is null")
+      .bind(profilId)
+      .run();
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function adminOwnsProfil(profilId: number) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) return false;
+
+  const { data } = await supabase
+    .from("profils")
+    .select("id")
+    .eq("id", profilId)
+    .is("owner_email", null)
+    .maybeSingle();
+
+  return Boolean(data);
 }
 
 async function clientOwnsProfil(email: string, profilId: number) {

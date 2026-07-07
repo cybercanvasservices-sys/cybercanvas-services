@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
 
   if (access.role === "client") {
     query = query.eq("owner_email", access.email);
+  } else {
+    query = query.is("owner_email", null);
   }
 
   const { data, error } = await query;

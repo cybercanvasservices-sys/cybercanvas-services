@@ -152,6 +152,8 @@ export async function GET(request: NextRequest) {
 
     if (access.role === "client") {
       query = query.eq("owner_email", access.email);
+    } else {
+      query = query.is("owner_email", null);
     }
 
     const { data, error } = await query.single();
@@ -170,6 +172,8 @@ export async function GET(request: NextRequest) {
 
   if (access.role === "client") {
     query = query.eq("owner_email", access.email);
+  } else {
+    query = query.is("owner_email", null);
   }
 
   const { data, error } = await query;
@@ -230,6 +234,8 @@ export async function PATCH(request: NextRequest) {
 
   if (access.role === "client") {
     updateQuery = updateQuery.eq("owner_email", access.email);
+  } else {
+    updateQuery = updateQuery.is("owner_email", null);
   }
 
   let { data, error } = await updateQuery.select("*").single();
@@ -242,6 +248,8 @@ export async function PATCH(request: NextRequest) {
 
     if (access.role === "client") {
       fallbackQuery = fallbackQuery.eq("owner_email", access.email);
+    } else {
+      fallbackQuery = fallbackQuery.is("owner_email", null);
     }
 
     const fallback = await fallbackQuery.select("*").single();
@@ -298,6 +306,8 @@ export async function DELETE(request: NextRequest) {
 
   if (access.role === "client") {
     deleteQuery = deleteQuery.eq("owner_email", access.email);
+  } else {
+    deleteQuery = deleteQuery.is("owner_email", null);
   }
 
   const { error } = await deleteQuery;
