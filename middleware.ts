@@ -2,7 +2,7 @@
 import type { NextRequest } from "next/server";
 import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
 
-const adminOnlyRoutes = ["/utilisateurs"];
+const adminOnlyRoutes = ["/utilisateurs", "/vpn-test"];
 
 export async function middleware(request: NextRequest) {
   const adminSession = request.cookies.get("admin_session")?.value;
@@ -59,6 +59,7 @@ export const config = {
     "/transactions/:path*",
     "/utilisateurs/:path*",
     "/ventes/:path*",
+    "/vpn-test/:path*",
     "/wifi/:path*",
   ],
 };

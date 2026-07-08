@@ -9,6 +9,7 @@ import {
   Layers,
   LogOut,
   Router,
+  Shield,
   Ticket,
   User,
   Users,
@@ -98,13 +99,22 @@ export default function Sidebar({
           />
 
           {isAdmin && (
-            <NavLink
-              href="/utilisateurs"
-              label="Utilisateurs"
-              icon={Users}
-              pathname={pathname}
-              onNavigate={onClose}
-            />
+            <>
+              <NavLink
+                href="/utilisateurs"
+                label="Utilisateurs"
+                icon={Users}
+                pathname={pathname}
+                onNavigate={onClose}
+              />
+              <NavLink
+                href="/vpn-test"
+                label="VPN test"
+                icon={Shield}
+                pathname={pathname}
+                onNavigate={onClose}
+              />
+            </>
           )}
 
           {canUseOffers && (
