@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     message:
-      "Votre compte a ete cree. Consultez votre boite email pour confirmer votre inscription.",
+      "Compte cr\u00e9\u00e9 avec succ\u00e8s. Nous avons envoy\u00e9 un lien de validation \u00e0 votre adresse email. Consultez votre bo\u00eete de r\u00e9ception et cliquez sur le bouton de confirmation pour activer votre compte.",
     emailSent: true,
   });
 }
@@ -389,3 +389,4 @@ export async function DELETE(request: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+

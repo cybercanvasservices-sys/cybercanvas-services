@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
@@ -134,11 +134,14 @@ export default function RegisterPage() {
               <div className="space-y-4">
                 <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-center text-emerald-50">
                   <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-300" />
-                  <h2 className="text-xl font-black text-white">Compte cree</h2>
+                  <h2 className="text-xl font-black text-white">Compte cr&eacute;&eacute; avec succ&egrave;s</h2>
                   <p className="mt-2 text-sm leading-6 text-emerald-50/90">
-                    Un lien de validation a ete envoye a{" "}
+                    Nous avons envoy&eacute; un lien de validation &agrave;{" "}
                     <span className="font-bold text-white">{registeredEmail}</span>.
-                    Ouvrez votre boite email puis cliquez sur le bouton de confirmation.
+                    Consultez votre bo&icirc;te de r&eacute;ception et cliquez sur le bouton de confirmation pour activer votre compte.
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-50/80">
+                    Si vous ne trouvez pas l&rsquo;e-mail, v&eacute;rifiez aussi vos courriers ind&eacute;sirables.
                   </p>
                 </div>
 
@@ -235,5 +238,6 @@ function Field({
     </div>
   );
 }
+
 
 
