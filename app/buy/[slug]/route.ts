@@ -1,6 +1,6 @@
-import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { buildPaygateIdentifier } from "@/lib/paygate";
 
 type Props = {
   params: Promise<{
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: Props) {
   }
 
   const origin = getRequestOrigin(request);
-  const identifier = `TICKET-${randomUUID()}`;
+  const identifier = buildPaygateIdentifier(profil.id);
   const description = `Ticket Wifi - ${profil.nom}`;
   const retour =
     `${origin}/payer?profil=${profil.id}` +
