@@ -1,11 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import {
   Bell,
   CircleHelp,
+  Clock3,
   PanelLeft,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
@@ -22,6 +24,13 @@ type ClientInfo = {
   statut?: string | null;
 };
 
+type PresenceInfo = {
+  online: number;
+  admins: number;
+  clients: number;
+  updatedAtGmt: string;
+};
+
 export default function AdminShell({
   title,
   breadcrumb,
@@ -30,6 +39,7 @@ export default function AdminShell({
   const [pendingAccounts, setPendingAccounts] = useState(0);
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
+  const [presence, setPresence] = useState<PresenceInfo | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [idleCountdown, setIdleCountdown] = useState<number | null>(null);
   const clientDisplayName = client?.nom || client?.email || "Client";
@@ -106,6 +116,38 @@ export default function AdminShell({
       );
     };
   }, []);
+
+  useEffect(() => {
+    if (!role) return;
+
+    let active = true;
+
+    async function refreshPresence() {
+      try {
+        const response = await fetch("/api/presence", {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        if (!active || !response.ok) return;
+
+        const result = (await response.json()) as PresenceInfo;
+        setPresence(result);
+      } catch {
+        if (active) {
+          setPresence(null);
+        }
+      }
+    }
+
+    void refreshPresence();
+    const timer = window.setInterval(refreshPresence, 30000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [role]);
 
   useEffect(() => {
     if (!role) return;
@@ -227,8 +269,35 @@ export default function AdminShell({
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/12 px-4 py-3 text-sm font-semibold">
-                  Service actif
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-white/12 px-4 py-3 text-sm font-semibold">
+                    Service actif
+                  </div>
+
+                  <div className="min-w-[220px] rounded-2xl border border-white/15 bg-white/14 px-4 py-3 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
+                          Utilisateurs connectes
+                        </p>
+                        <p className="mt-1 text-3xl font-black text-white">
+                          {presence?.online ?? (role ? 1 : 0)}
+                        </p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-100">
+                        <Users size={22} />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-cyan-50/85">
+                      <Clock3 size={14} />
+                      <span>
+                        GMT: {presence?.updatedAtGmt || new Date().toUTCString()}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-cyan-50/70">
+                      Admin: {presence?.admins ?? (role === "admin" ? 1 : 0)} / Clients: {presence?.clients ?? (role === "client" ? 1 : 0)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
