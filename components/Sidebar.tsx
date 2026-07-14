@@ -87,14 +87,9 @@ export default function Sidebar({
                   Services
                 </span>
               </div>
-              <div className="mt-2 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">
-                {isAdmin ? "Espace admin" : "Espace client"}
-              </div>
-              {!isAdmin && clientName && (
-                <p className="mt-2 truncate text-xs font-semibold text-slate-300">
-                  {clientName}
-                </p>
-              )}
+              <span className="mt-2 block truncate text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                {isAdmin ? "Admin" : clientName || "Client"}
+              </span>
             </div>
           </div>
         </div>
