@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -75,16 +75,26 @@ export default function Sidebar({
         }`}
       >
       <div className="flex h-full flex-col">
-        <div className="border-b border-white/10 px-5 py-6">
-          <div className="flex items-center gap-3">
+        <div className="border-b border-white/10 px-5 py-5">
+          <div className="flex items-start gap-3">
             <CyberCanvasLogo />
-            <div className="min-w-0">
-              <span className="block truncate text-lg font-black tracking-wide text-white">
-                CyberCanvas Services
-              </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                {isAdmin ? "Admin" : clientName || "Client"}
-              </span>
+            <div className="min-w-0 flex-1">
+              <div className="leading-tight">
+                <span className="block text-[15px] font-black tracking-wide text-white">
+                  CyberCanvas
+                </span>
+                <span className="block text-[15px] font-black tracking-wide text-cyan-100">
+                  Services
+                </span>
+              </div>
+              <div className="mt-2 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">
+                {isAdmin ? "Espace admin" : "Espace client"}
+              </div>
+              {!isAdmin && clientName && (
+                <p className="mt-2 truncate text-xs font-semibold text-slate-300">
+                  {clientName}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -184,15 +194,12 @@ export default function Sidebar({
 function CyberCanvasLogo() {
   return (
     <div
-      className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-950/30"
+      className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-300/35 bg-slate-950 text-cyan-200"
       aria-label="CyberCanvas Services"
     >
-      <div className="absolute inset-1 rounded-xl border border-white/45" />
-      <span className="text-base font-black tracking-[-0.02em]">CC</span>
-      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 ring-4 ring-[#101827]">
-        <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />
-      </span>
-      <span className="absolute bottom-2 h-0.5 w-6 rounded-full bg-slate-950/35" />
+      <span className="text-base font-black tracking-tight">CC</span>
+      <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-[#101827] bg-emerald-400" />
+      <span className="absolute inset-x-2 bottom-2 h-px rounded-full bg-cyan-300/40" />
     </div>
   );
 }
