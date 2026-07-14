@@ -28,7 +28,6 @@ type SidebarRole = "admin" | "client" | null;
 export default function Sidebar({
   role,
   clientStatus,
-  clientName,
   open = false,
   onClose,
 }: {
@@ -88,7 +87,7 @@ export default function Sidebar({
                 </span>
               </div>
               <span className="mt-2 block truncate text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                {isAdmin ? "Admin" : clientName || "Client"}
+                {isAdmin ? "Admin" : "Membre connecte"}
               </span>
             </div>
           </div>

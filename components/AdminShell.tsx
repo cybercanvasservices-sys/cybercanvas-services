@@ -31,6 +31,21 @@ type PresenceInfo = {
   updatedAtGmt: string;
 };
 
+function formatGmtDate(date: Date) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .format(date)
+    .replace(",", " a") + " GMT";
+}
+
 export default function AdminShell({
   title,
   breadcrumb,
@@ -120,7 +135,7 @@ export default function AdminShell({
 
   useEffect(() => {
     function refreshLiveGmt() {
-      setLiveGmt(new Date().toUTCString());
+      setLiveGmt(formatGmtDate(new Date()));
     }
 
     refreshLiveGmt();
@@ -305,7 +320,7 @@ export default function AdminShell({
                     <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-cyan-50/85">
                       <Clock3 size={14} />
                       <span>
-                        GMT: {liveGmt || presence?.updatedAtGmt || new Date().toUTCString()}
+                        {liveGmt || presence?.updatedAtGmt || formatGmtDate(new Date())}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-cyan-50/70">
