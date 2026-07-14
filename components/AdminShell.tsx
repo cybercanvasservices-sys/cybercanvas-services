@@ -40,6 +40,7 @@ export default function AdminShell({
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [presence, setPresence] = useState<PresenceInfo | null>(null);
+  const [liveGmt, setLiveGmt] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [idleCountdown, setIdleCountdown] = useState<number | null>(null);
   const clientDisplayName = client?.nom || client?.email || "Client";
@@ -114,6 +115,19 @@ export default function AdminShell({
         "cybercanvas-users-updated",
         listener
       );
+    };
+  }, []);
+
+  useEffect(() => {
+    function refreshLiveGmt() {
+      setLiveGmt(new Date().toUTCString());
+    }
+
+    refreshLiveGmt();
+    const timer = window.setInterval(refreshLiveGmt, 1000);
+
+    return () => {
+      window.clearInterval(timer);
     };
   }, []);
 
@@ -291,7 +305,7 @@ export default function AdminShell({
                     <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-cyan-50/85">
                       <Clock3 size={14} />
                       <span>
-                        GMT: {presence?.updatedAtGmt || new Date().toUTCString()}
+                        GMT: {liveGmt || presence?.updatedAtGmt || new Date().toUTCString()}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-cyan-50/70">
