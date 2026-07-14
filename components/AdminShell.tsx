@@ -295,7 +295,7 @@ export default function AdminShell({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-cyan-50/70">
-                      Admin: {presence?.admins ?? (role === "admin" ? 1 : 0)} / Clients: {presence?.clients ?? (role === "client" ? 1 : 0)}
+                      Mise a jour en temps reel
                     </p>
                   </div>
                 </div>
