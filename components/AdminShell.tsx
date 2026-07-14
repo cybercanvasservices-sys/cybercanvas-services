@@ -31,19 +31,23 @@ type PresenceInfo = {
   updatedAtGmt: string;
 };
 
-function formatGmtDate(date: Date) {
+function formatLiveTime(date: Date) {
   return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "UTC",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+    timeZone: "Africa/Lome",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: false,
-  })
-    .format(date)
-    .replace(",", " a") + " GMT";
+  }).format(date);
+}
+
+function formatLiveDate(date: Date) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Africa/Lome",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 }
 
 export default function AdminShell({
@@ -55,7 +59,8 @@ export default function AdminShell({
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [presence, setPresence] = useState<PresenceInfo | null>(null);
-  const [liveGmt, setLiveGmt] = useState("");
+  const [liveTime, setLiveTime] = useState("");
+  const [liveDate, setLiveDate] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [idleCountdown, setIdleCountdown] = useState<number | null>(null);
   const clientDisplayName = client?.nom || client?.email || "Client";
@@ -134,12 +139,14 @@ export default function AdminShell({
   }, []);
 
   useEffect(() => {
-    function refreshLiveGmt() {
-      setLiveGmt(formatGmtDate(new Date()));
+    function refreshLiveClock() {
+      const now = new Date();
+      setLiveTime(formatLiveTime(now));
+      setLiveDate(formatLiveDate(now));
     }
 
-    refreshLiveGmt();
-    const timer = window.setInterval(refreshLiveGmt, 1000);
+    refreshLiveClock();
+    const timer = window.setInterval(refreshLiveClock, 1000);
 
     return () => {
       window.clearInterval(timer);
@@ -307,7 +314,7 @@ export default function AdminShell({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
-                          Utilisateurs connectes
+                          Sessions actives
                         </p>
                         <p className="mt-1 text-3xl font-black text-white">
                           {presence?.online ?? (role ? 1 : 0)}
@@ -317,14 +324,19 @@ export default function AdminShell({
                         <Users size={22} />
                       </div>
                     </div>
-                    <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-cyan-50/85">
-                      <Clock3 size={14} />
-                      <span>
-                        {liveGmt || presence?.updatedAtGmt || formatGmtDate(new Date())}
-                      </span>
+                    <div className="mt-2 flex items-start gap-2 text-cyan-50/90">
+                      <Clock3 className="mt-1 shrink-0" size={15} />
+                      <div>
+                        <p className="text-lg font-black leading-none">
+                          {liveTime || formatLiveTime(new Date())}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold capitalize text-cyan-50/75">
+                          {liveDate || formatLiveDate(new Date())}
+                        </p>
+                      </div>
                     </div>
                     <p className="mt-1 text-xs text-cyan-50/70">
-                      Mise a jour en temps reel
+                      Activite en direct
                     </p>
                   </div>
                 </div>
