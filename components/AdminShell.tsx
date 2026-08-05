@@ -242,7 +242,7 @@ export default function AdminShell({
   }, [role]);
 
   return (
-    <div className="min-h-screen bg-[#eef3f8] text-slate-800">
+    <div className="min-h-screen bg-[#f4f6f8] text-slate-800">
       <Sidebar
         role={role}
         clientStatus={client?.statut || null}
@@ -254,7 +254,7 @@ export default function AdminShell({
       <div className="min-h-screen lg:pl-[276px]">
         <main className="min-w-0">
           <header className="border-b border-slate-200 bg-white">
-            <div className="flex items-start justify-between gap-3 px-4 py-4 sm:items-center sm:px-6">
+            <div className="flex items-start justify-between gap-3 px-4 py-5 sm:items-center sm:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
@@ -265,10 +265,10 @@ export default function AdminShell({
                   <PanelLeft size={20} />
                 </button>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-600">
-                    CyberCanvas Services
+                  <p className="text-xs font-semibold text-slate-500">
+                    {breadcrumb || "Espace de gestion"}
                   </p>
-                  <h1 className="break-words text-xl font-black text-slate-900 sm:text-2xl">
+                  <h1 className="mt-0.5 break-words text-xl font-bold text-slate-950 sm:text-2xl">
                     {title}
                   </h1>
                 </div>
@@ -287,40 +287,32 @@ export default function AdminShell({
                 <span className="hidden rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700 md:inline-flex">
                   {role === "admin" ? "Administrateur connecte" : clientDisplayName}
                 </span>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#123d6b] text-white">
                   <ShieldCheck size={22} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#13233f] via-[#164e63] to-[#0ea5a5] px-4 py-6 text-white sm:px-6 sm:py-8">
+            <div className="border-t border-slate-100 bg-[#123d6b] px-4 py-5 text-white sm:px-8 sm:py-6">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div className="min-w-0">
-                  <p className="text-sm text-cyan-100">
-                    Accueil / {breadcrumb || title}
-                  </p>
-                  <p className="mt-3 max-w-3xl text-base font-medium leading-7 text-white/90 sm:text-lg">
-                    Gerez vos offres WiFi, vos tickets, vos ventes et
-                    vos paiements depuis un espace clair et securise.
+                  <p className="max-w-3xl text-sm font-medium leading-6 text-white/85 sm:text-base">
+                    Gérez vos offres WiFi, vos tickets, vos ventes et vos paiements.
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-white/12 px-4 py-3 text-sm font-semibold">
-                    Service actif
-                  </div>
-
-                  <div className="min-w-[220px] rounded-2xl border border-white/15 bg-white/14 px-4 py-3 shadow-sm">
+                  <div className="min-w-[220px] rounded-lg border border-white/20 bg-white/10 px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-100">
                           Sessions actives
                         </p>
-                        <p className="mt-1 text-3xl font-black text-white">
+                        <p className="mt-1 text-2xl font-bold text-white">
                           {presence?.online ?? (role ? 1 : 0)}
                         </p>
                       </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-100">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 text-blue-100">
                         <Users size={22} />
                       </div>
                     </div>
@@ -344,9 +336,9 @@ export default function AdminShell({
             </div>
           </header>
 
-          <section className="px-4 py-5 sm:px-6 sm:py-6">
-            <div className="mb-6 flex gap-3 rounded-xl border border-cyan-100 bg-cyan-50 p-4 text-cyan-950">
-              <CircleHelp className="mt-0.5 shrink-0 text-cyan-600" size={20} />
+          <section className="px-4 py-6 sm:px-8 sm:py-8">
+            <div className="mb-6 flex gap-3 border border-slate-200 bg-white p-4 text-slate-700 shadow-sm">
+              <CircleHelp className="mt-0.5 shrink-0 text-blue-700" size={20} />
               <p className="text-sm leading-6">
                 Parcours recommande: creez une offre WiFi, importez vos tickets
                 CSV, puis ouvrez votre page de vente. Les resultats seront visibles
@@ -380,7 +372,6 @@ export default function AdminShell({
     </div>
   );
 }
-
 
 
 

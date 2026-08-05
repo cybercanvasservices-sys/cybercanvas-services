@@ -37,7 +37,7 @@ export default function Sidebar({
   open?: boolean;
   onClose?: () => void;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "/";
   const router = useRouter();
   const isAdmin = role === "admin";
   const canUseOffers = isAdmin || clientStatus === "actif";
@@ -69,7 +69,7 @@ export default function Sidebar({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[276px] max-w-[82vw] overflow-y-auto bg-[#101827] text-slate-200 shadow-xl transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[276px] max-w-[82vw] overflow-y-auto border-r border-slate-800 bg-[#0d1b2a] text-slate-200 transition-transform duration-200 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -79,14 +79,14 @@ export default function Sidebar({
             <CyberCanvasLogo />
             <div className="min-w-0 flex-1">
               <div className="leading-tight">
-                <span className="block text-[15px] font-black tracking-wide text-white">
+                <span className="block text-[15px] font-bold tracking-wide text-white">
                   CyberCanvas
                 </span>
-                <span className="block text-[15px] font-black tracking-wide text-cyan-100">
+                <span className="block text-[15px] font-bold tracking-wide text-slate-300">
                   Services
                 </span>
               </div>
-              <span className="mt-2 block truncate text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+              <span className="mt-2 block truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 {isAdmin ? "Admin" : "Membre connecte"}
               </span>
             </div>
@@ -127,15 +127,15 @@ export default function Sidebar({
               onClick={() => setOffersOpen((open) => !open)}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
                 offersOpen
-                  ? "bg-cyan-400 text-slate-950"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-white/10 text-white"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
               }`}
             >
               <span
                 className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                   offersOpen
-                    ? "bg-slate-950/10 text-slate-950"
-                    : "bg-white/8 text-cyan-200"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white/5 text-slate-300"
                 }`}
               >
                 <Ticket size={20} />
@@ -221,12 +221,12 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className={`flex items-center gap-3 rounded-xl px-3 text-sm font-bold transition ${
+      className={`flex items-center gap-3 rounded-lg px-3 text-sm font-semibold transition ${
         compact ? "py-2" : "py-3"
       } ${
         active
-          ? "bg-cyan-400 text-slate-950"
-          : "text-slate-300 hover:bg-white/10 hover:text-white"
+          ? "bg-blue-600 text-white"
+          : "text-slate-300 hover:bg-white/5 hover:text-white"
       }`}
     >
       <span
@@ -234,8 +234,8 @@ function NavLink({
           compact ? "h-8 w-8" : "h-10 w-10"
         } ${
           active
-            ? "bg-slate-950/10 text-slate-950"
-            : "bg-white/8 text-cyan-200"
+            ? "bg-white/10 text-white"
+            : "bg-white/5 text-slate-400"
         }`}
       >
         <Icon size={compact ? 17 : 20} />
@@ -244,5 +244,3 @@ function NavLink({
     </Link>
   );
 }
-
-
