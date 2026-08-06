@@ -132,13 +132,13 @@ export default function VpnTestPage() {
   }
 
   return (
-    <AdminShell title="VPN test" breadcrumb="Administration / VPN test">
+    <AdminShell title="VPN" breadcrumb="Offres WiFi / VPN">
       <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-600">
-                Test administrateur
+                VPN
               </p>
               <h2 className="mt-2 text-2xl font-black text-slate-950">
                 Generateur VPN MikroTik
