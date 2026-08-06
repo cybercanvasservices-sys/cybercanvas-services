@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   CircleHelp,
-  Clock3,
   PanelLeft,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
@@ -24,32 +22,6 @@ type ClientInfo = {
   statut?: string | null;
 };
 
-type PresenceInfo = {
-  online: number;
-  admins: number;
-  clients: number;
-  updatedAtGmt: string;
-};
-
-function formatLiveTime(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Africa/Lome",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
-}
-
-function formatLiveDate(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Africa/Lome",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
-}
-
 export default function AdminShell({
   title,
   breadcrumb,
@@ -58,9 +30,6 @@ export default function AdminShell({
   const [pendingAccounts, setPendingAccounts] = useState(0);
   const [role, setRole] = useState<ConnectedRole>(null);
   const [client, setClient] = useState<ClientInfo | null>(null);
-  const [presence, setPresence] = useState<PresenceInfo | null>(null);
-  const [liveTime, setLiveTime] = useState("");
-  const [liveDate, setLiveDate] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [idleCountdown, setIdleCountdown] = useState<number | null>(null);
   const clientDisplayName = client?.nom || client?.email || "Client";
@@ -137,53 +106,6 @@ export default function AdminShell({
       );
     };
   }, []);
-
-  useEffect(() => {
-    function refreshLiveClock() {
-      const now = new Date();
-      setLiveTime(formatLiveTime(now));
-      setLiveDate(formatLiveDate(now));
-    }
-
-    refreshLiveClock();
-    const timer = window.setInterval(refreshLiveClock, 1000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!role) return;
-
-    let active = true;
-
-    async function refreshPresence() {
-      try {
-        const response = await fetch("/api/presence", {
-          method: "POST",
-          cache: "no-store",
-        });
-
-        if (!active || !response.ok) return;
-
-        const result = (await response.json()) as PresenceInfo;
-        setPresence(result);
-      } catch {
-        if (active) {
-          setPresence(null);
-        }
-      }
-    }
-
-    void refreshPresence();
-    const timer = window.setInterval(refreshPresence, 30000);
-
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-    };
-  }, [role]);
 
   useEffect(() => {
     if (!role) return;
@@ -301,37 +223,6 @@ export default function AdminShell({
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="min-w-[220px] rounded-lg border border-white/20 bg-white/10 px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-100">
-                          Sessions actives
-                        </p>
-                        <p className="mt-1 text-2xl font-bold text-white">
-                          {presence?.online ?? (role ? 1 : 0)}
-                        </p>
-                      </div>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 text-blue-100">
-                        <Users size={22} />
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-start gap-2 text-cyan-50/90">
-                      <Clock3 className="mt-1 shrink-0" size={15} />
-                      <div>
-                        <p className="text-lg font-black leading-none">
-                          {liveTime || formatLiveTime(new Date())}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold capitalize text-cyan-50/75">
-                          {liveDate || formatLiveDate(new Date())}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-xs text-cyan-50/70">
-                      Activite en direct
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </header>
@@ -372,7 +263,6 @@ export default function AdminShell({
     </div>
   );
 }
-
 
 
 

@@ -111,13 +111,6 @@ export default function Sidebar({
                 pathname={pathname}
                 onNavigate={onClose}
               />
-              <NavLink
-                href="/vpn-test"
-                label="VPN test"
-                icon={Shield}
-                pathname={pathname}
-                onNavigate={onClose}
-              />
             </>
           )}
 
@@ -163,6 +156,16 @@ export default function Sidebar({
                   onNavigate={onClose}
                 />
               ))}
+              {isAdmin && (
+                <NavLink
+                  href="/vpn-test"
+                  label="VPN"
+                  icon={Shield}
+                  pathname={pathname}
+                  compact
+                  onNavigate={onClose}
+                />
+              )}
             </div>
           )}
         </nav>
