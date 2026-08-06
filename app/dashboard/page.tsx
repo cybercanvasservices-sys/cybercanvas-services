@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   CreditCard,
   MessageCircle,
-  ShieldCheck,
   User,
   Wallet,
 } from "lucide-react";
@@ -163,32 +162,6 @@ export default function DashboardPage() {
           Contacter l&apos;administrateur
         </a>
       </div>
-      )}
-
-      {isAdmin && (
-        <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm md:flex-row md:items-center md:justify-between">
-          <div className="flex gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
-              <ShieldCheck size={22} />
-            </div>
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-700">
-                Test administrateur
-              </p>
-              <p className="mt-1 text-sm font-semibold leading-6">
-                Preparez et testez les scripts VPN MikroTik v6/v7 avant de les
-                proposer aux clients.
-              </p>
-            </div>
-          </div>
-          <a
-            href="/vpn-test"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
-          >
-            <ShieldCheck size={18} />
-            Ouvrir VPN test
-          </a>
-        </div>
       )}
 
       <div className="mb-5">
@@ -383,5 +356,4 @@ function MiniStat({
     </div>
   );
 }
-
 
