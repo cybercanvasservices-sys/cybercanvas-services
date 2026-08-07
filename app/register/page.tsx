@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { FormEvent, useState } from "react";
 import { CheckCircle2, Home, Lock, Mail, Phone, RefreshCcw, User, Wifi } from "lucide-react";
 
@@ -95,13 +96,13 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#f4f7f5] p-4 text-[#10231f]">
 
-      <div className="mx-auto flex w-full max-w-6xl justify-between gap-4 py-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#d7e0dc] bg-white px-4 py-2 text-sm font-bold text-[#405852] hover:border-[#0a7566]"
-        >
-          <Home size={17} />
-          Accueil
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 py-4">
+        <Link href="/" className="flex items-center gap-3" aria-label="CyberCanvas Services">
+          <BrandLogo size={40} />
+          <span className="hidden text-left sm:block">
+            <span className="block text-sm font-bold leading-tight">CyberCanvas Services</span>
+            <span className="block text-xs text-[#667872]">Solutions réseaux &amp; WiFi</span>
+          </span>
         </Link>
         <Link
           href="/login"
@@ -117,7 +118,7 @@ export default function RegisterPage() {
             <div className="mb-8 text-center">
               <div className="mb-4 flex justify-center">
                 <div className="rounded-xl bg-[#dcebe6] p-3">
-                  <Wifi className="h-8 w-8 text-[#0a7566]" />
+                  <BrandLogo size={46} />
                 </div>
               </div>
 
@@ -233,4 +234,3 @@ function Field({
     </div>
   );
 }
-

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import {
   ArrowUpRight,
   Camera,
@@ -40,7 +41,7 @@ export default function Home() {
       <header className="border-b border-[#dfe5e1] bg-white/95">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
           <Link href="/" className="flex items-center gap-3" aria-label="CyberCanvas Services">
-            <BrandMark />
+            <BrandLogo />
             <div className="leading-tight">
               <span className="block text-[15px] font-extrabold tracking-tight text-[#112d29]">CyberCanvas</span>
               <span className="block text-xs font-semibold tracking-[0.12em] text-[#59716b]">SERVICES</span>
@@ -147,18 +148,10 @@ export default function Home() {
 
       <footer id="contact" className="bg-white">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-5 py-10 sm:flex-row sm:items-center lg:px-8">
-          <div className="flex items-center gap-3"><BrandMark /><span className="font-bold">CyberCanvas Services</span></div>
+          <div className="flex items-center gap-3"><BrandLogo /><span className="font-bold">CyberCanvas Services</span></div>
           <p className="text-sm text-[#657771]">Lomé, Togo · Solutions réseaux, WiFi et sécurité</p>
         </div>
       </footer>
     </main>
-  );
-}
-
-function BrandMark() {
-  return (
-    <span className="relative flex h-11 w-11 items-center justify-center rounded-lg bg-[#123b35] text-sm font-black text-white">
-      CC<span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-[#37b69f]" />
-    </span>
   );
 }

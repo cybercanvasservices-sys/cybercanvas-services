@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -76,7 +77,7 @@ export default function Sidebar({
       <div className="flex h-full flex-col">
         <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-start gap-3">
-            <CyberCanvasLogo />
+            <BrandLogo size={44} inverted />
             <div className="min-w-0 flex-1">
               <div className="leading-tight">
                 <span className="block text-[15px] font-extrabold tracking-tight text-white">
@@ -185,18 +186,6 @@ export default function Sidebar({
       </div>
       </aside>
     </>
-  );
-}
-
-function CyberCanvasLogo() {
-  return (
-    <div
-      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white text-[#102f2a] shadow-sm"
-      aria-label="CyberCanvas Services"
-    >
-      <span className="text-base font-black tracking-tight">CC</span>
-      <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-[#102f2a] bg-[#47c2ad]" />
-    </div>
   );
 }
 

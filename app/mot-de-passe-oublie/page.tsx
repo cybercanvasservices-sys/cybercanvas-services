@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { FormEvent, useState } from "react";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 
@@ -43,6 +44,13 @@ export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f4f7f5] p-4">
       <section className="w-full max-w-md rounded-xl border border-[#dfe5e1] bg-white p-8 text-[#10231f] shadow-[0_20px_60px_rgba(24,55,48,0.08)]">
+        <div className="mb-6 flex items-center gap-3 border-b border-[#e3e9e6] pb-5">
+          <BrandLogo size={42} />
+          <div>
+            <p className="text-sm font-bold leading-tight">CyberCanvas Services</p>
+            <p className="text-xs text-slate-500">Récupération sécurisée</p>
+          </div>
+        </div>
         <Link
           href="/login"
           className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#0a7566] hover:text-[#075b50]"
