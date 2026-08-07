@@ -69,31 +69,31 @@ export default function Sidebar({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[276px] max-w-[82vw] overflow-y-auto border-r border-slate-800 bg-[#0d1b2a] text-slate-200 transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[264px] max-w-[82vw] overflow-y-auto border-r border-[#21473f] bg-[#102f2a] text-slate-200 shadow-xl shadow-black/10 transition-transform duration-200 lg:translate-x-0 lg:shadow-none ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
       <div className="flex h-full flex-col">
-        <div className="border-b border-white/10 px-5 py-5">
+        <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-start gap-3">
             <CyberCanvasLogo />
             <div className="min-w-0 flex-1">
               <div className="leading-tight">
-                <span className="block text-[15px] font-bold tracking-wide text-white">
+                <span className="block text-[15px] font-extrabold tracking-tight text-white">
                   CyberCanvas
                 </span>
-                <span className="block text-[15px] font-bold tracking-wide text-slate-300">
+                <span className="block text-xs font-semibold tracking-[0.12em] text-[#a8c6bf]">
                   Services
                 </span>
               </div>
               <span className="mt-2 block truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                {isAdmin ? "Admin" : "Membre connecte"}
+                {isAdmin ? "Espace administrateur" : "Espace client"}
               </span>
             </div>
           </div>
         </div>
 
-        <nav className="space-y-1 px-4 py-5">
+        <nav className="space-y-1 px-3 py-5">
           <NavLink
             href="/dashboard"
             label="Mon profil"
@@ -174,7 +174,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-300 hover:bg-red-500/15 hover:text-red-200"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-[#c0d2cd] hover:bg-red-500/15 hover:text-red-100"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/8 text-red-200">
               <LogOut size={20} />
@@ -191,12 +191,11 @@ export default function Sidebar({
 function CyberCanvasLogo() {
   return (
     <div
-      className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-300/35 bg-slate-950 text-cyan-200"
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white text-[#102f2a] shadow-sm"
       aria-label="CyberCanvas Services"
     >
       <span className="text-base font-black tracking-tight">CC</span>
-      <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-[#101827] bg-emerald-400" />
-      <span className="absolute inset-x-2 bottom-2 h-px rounded-full bg-cyan-300/40" />
+      <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-[#102f2a] bg-[#47c2ad]" />
     </div>
   );
 }
@@ -228,8 +227,8 @@ function NavLink({
         compact ? "py-2" : "py-3"
       } ${
         active
-          ? "bg-blue-600 text-white"
-          : "text-slate-300 hover:bg-white/5 hover:text-white"
+          ? "bg-white text-[#123b35] shadow-sm"
+          : "text-[#c0d2cd] hover:bg-white/6 hover:text-white"
       }`}
     >
       <span
@@ -237,8 +236,8 @@ function NavLink({
           compact ? "h-8 w-8" : "h-10 w-10"
         } ${
           active
-            ? "bg-white/10 text-white"
-            : "bg-white/5 text-slate-400"
+            ? "bg-[#dcebe6] text-[#0a7566]"
+            : "bg-white/5 text-[#aac2bc]"
         }`}
       >
         <Icon size={compact ? 17 : 20} />

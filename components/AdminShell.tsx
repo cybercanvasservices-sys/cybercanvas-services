@@ -5,7 +5,7 @@ import {
   Bell,
   CircleHelp,
   PanelLeft,
-  ShieldCheck,
+  UserRound,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
@@ -164,7 +164,7 @@ export default function AdminShell({
   }, [role]);
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-800">
+    <div className="min-h-screen bg-[#f5f7f5] text-slate-800">
       <Sidebar
         role={role}
         clientStatus={client?.statut || null}
@@ -173,24 +173,24 @@ export default function AdminShell({
         onClose={() => setMenuOpen(false)}
       />
 
-      <div className="min-h-screen lg:pl-[276px]">
+      <div className="min-h-screen lg:pl-[264px]">
         <main className="min-w-0">
-          <header className="border-b border-slate-200 bg-white">
-            <div className="flex items-start justify-between gap-3 px-4 py-5 sm:items-center sm:px-8">
+          <header className="sticky top-0 z-30 border-b border-[#dfe5e1] bg-white/95 backdrop-blur">
+            <div className="mx-auto flex min-h-[76px] max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setMenuOpen(true)}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
+                  className="rounded-lg border border-[#dfe5e1] p-2.5 text-[#405852] hover:bg-[#eef3f0] lg:hidden"
                   aria-label="Menu"
                 >
                   <PanelLeft size={20} />
                 </button>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-500">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#71837d]">
                     {breadcrumb || "Espace de gestion"}
                   </p>
-                  <h1 className="mt-0.5 break-words text-xl font-bold text-slate-950 sm:text-2xl">
+                  <h1 className="mt-1 break-words text-xl font-extrabold tracking-tight text-[#102f2a] sm:text-2xl">
                     {title}
                   </h1>
                 </div>
@@ -200,25 +200,25 @@ export default function AdminShell({
                 {role === "admin" && pendingAccounts > 0 && (
                   <a
                     href="/utilisateurs"
-                    className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 sm:px-3 sm:text-sm"
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 sm:px-3 sm:text-sm"
                   >
                     <Bell size={16} />
                     {pendingAccounts} validation(s)
                   </a>
                 )}
-                <span className="hidden rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700 md:inline-flex">
+                <span className="hidden max-w-56 truncate text-sm font-semibold text-[#405852] md:inline-flex">
                   {role === "admin" ? "Administrateur connecte" : clientDisplayName}
                 </span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#123d6b] text-white">
-                  <ShieldCheck size={22} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#cddbd6] bg-[#edf4f1] text-[#0a7566]">
+                  <UserRound size={19} />
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-100 bg-[#123d6b] px-4 py-5 text-white sm:px-8 sm:py-6">
+            <div className="border-t border-[#dfe5e1] bg-[#edf3f0] px-4 py-3 text-[#405852] sm:px-8">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div className="min-w-0">
-                  <p className="max-w-3xl text-sm font-medium leading-6 text-white/85 sm:text-base">
+                  <p className="max-w-3xl text-sm font-medium leading-6 sm:text-base">
                     Gérez vos offres WiFi, vos tickets, vos ventes et vos paiements.
                   </p>
                 </div>
@@ -227,9 +227,9 @@ export default function AdminShell({
             </div>
           </header>
 
-          <section className="px-4 py-6 sm:px-8 sm:py-8">
-            <div className="mb-6 flex gap-3 border border-slate-200 bg-white p-4 text-slate-700 shadow-sm">
-              <CircleHelp className="mt-0.5 shrink-0 text-blue-700" size={20} />
+          <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8">
+            <div className="mb-6 flex gap-3 rounded-lg border border-[#dfe5e1] bg-white p-4 text-[#526861]">
+              <CircleHelp className="mt-0.5 shrink-0 text-[#0a7566]" size={20} />
               <p className="text-sm leading-6">
                 Parcours recommande: creez une offre WiFi, importez vos tickets
                 CSV, puis ouvrez votre page de vente. Les resultats seront visibles
@@ -263,7 +263,5 @@ export default function AdminShell({
     </div>
   );
 }
-
-
 
 
