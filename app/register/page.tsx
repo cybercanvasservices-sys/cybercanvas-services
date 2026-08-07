@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { motion } from "framer-motion";
 import { CheckCircle2, Home, Lock, Mail, Phone, RefreshCcw, User, Wifi } from "lucide-react";
 
 export default function RegisterPage() {
@@ -94,65 +93,61 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-cyan-900 p-4">
+    <div className="min-h-screen bg-[#f4f7f5] p-4 text-[#10231f]">
 
       <div className="mx-auto flex w-full max-w-6xl justify-between gap-4 py-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-slate-950/35 px-4 py-2 text-sm font-bold text-white hover:border-cyan-300"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#d7e0dc] bg-white px-4 py-2 text-sm font-bold text-[#405852] hover:border-[#0a7566]"
         >
           <Home size={17} />
           Accueil
         </Link>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-300"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0a6f61] px-4 py-2 text-sm font-bold text-white hover:bg-[#075b50]"
         >
           Connexion
         </Link>
       </div>
 
       <div className="flex min-h-[calc(100vh-88px)] items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-lg"
-        >
-          <div className="glass rounded-3xl border border-cyan-500/20 p-8">
+        <div className="w-full max-w-lg">
+          <div className="rounded-xl border border-[#dfe5e1] bg-white p-7 shadow-[0_20px_60px_rgba(24,55,48,0.08)] sm:p-9">
             <div className="mb-8 text-center">
               <div className="mb-4 flex justify-center">
-                <div className="rounded-full bg-cyan-500/20 p-4">
-                  <Wifi className="h-10 w-10 text-cyan-400" />
+                <div className="rounded-xl bg-[#dcebe6] p-3">
+                  <Wifi className="h-8 w-8 text-[#0a7566]" />
                 </div>
               </div>
 
-              <h1 className="text-3xl font-bold text-white">CyberCanvas Services</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-[#102f2a]">Créer votre compte</h1>
+              <p className="mt-2 text-sm text-[#667872]">Rejoignez votre espace de gestion CyberCanvas Services.</p>
             </div>
 
             {registeredEmail ? (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-center text-emerald-50">
-                  <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-300" />
-                  <h2 className="text-xl font-black text-white">Compte cr&eacute;&eacute; avec succ&egrave;s</h2>
-                  <p className="mt-2 text-sm leading-6 text-emerald-50/90">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center text-emerald-900">
+                  <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-600" />
+                  <h2 className="text-xl font-black text-emerald-950">Compte cr&eacute;&eacute; avec succ&egrave;s</h2>
+                  <p className="mt-2 text-sm leading-6 text-emerald-800">
                     Nous avons envoy&eacute; un lien de validation &agrave;{" "}
-                    <span className="font-bold text-white">{registeredEmail}</span>.
+                    <span className="font-bold text-emerald-950">{registeredEmail}</span>.
                     Consultez votre bo&icirc;te de r&eacute;ception et cliquez sur le bouton de confirmation pour activer votre compte.
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-emerald-50/80">
+                  <p className="mt-2 text-sm leading-6 text-emerald-700">
                     Si vous ne trouvez pas l&rsquo;e-mail, v&eacute;rifiez aussi vos courriers ind&eacute;sirables.
                   </p>
                 </div>
 
                 {message && (
-                  <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                     {message}
                   </div>
                 )}
 
                 {error && (
-                  <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                   </div>
                 )}
@@ -161,7 +156,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={resendVerification}
                   disabled={resending}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 py-3 font-bold text-cyan-100 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#b8ccc6] py-3 font-bold text-[#0a6f61] hover:bg-[#edf4f1] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <RefreshCcw size={18} />
                   {resending ? "Renvoi en cours..." : "Renvoyer le lien"}
@@ -169,7 +164,7 @@ export default function RegisterPage() {
 
                 <Link
                   href="/login"
-                  className="block w-full rounded-xl bg-cyan-500 py-3 text-center font-bold text-black transition hover:bg-cyan-400"
+                  className="block w-full rounded-lg bg-[#0a6f61] py-3 text-center font-bold text-white hover:bg-[#075b50]"
                 >
                   Aller a la connexion
                 </Link>
@@ -183,28 +178,28 @@ export default function RegisterPage() {
                 <Field icon={<Lock />} value={form.confirmPassword} placeholder="Confirmer le mot de passe" type="password" onChange={(value) => updateField("confirmPassword", value)} />
 
                 {error && (
-                  <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {error}
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-cyan-500 py-3 font-bold text-black transition hover:bg-cyan-400"
+                  className="w-full rounded-lg bg-[#0a6f61] py-3 font-bold text-white hover:bg-[#075b50]"
                 >
                   Creer le compte
                 </button>
               </form>
             )}
 
-            <div className="mt-6 text-center text-slate-300">
+            <div className="mt-6 text-center text-slate-600">
               Deja membre ?
-              <Link href="/login" className="ml-2 font-bold text-cyan-400 hover:text-cyan-300">
+              <Link href="/login" className="ml-2 font-bold text-[#0a7566] hover:text-[#075b50]">
                 Connexion
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -233,11 +228,9 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-700 bg-slate-800/60 py-3 pl-12 pr-4 text-white outline-none focus:border-cyan-500"
+        className="w-full rounded-lg border border-[#cad6d2] bg-white py-3 pl-12 pr-4 text-[#10231f] outline-none focus:border-[#0a7566] focus:ring-2 focus:ring-[#dcebe6]"
       />
     </div>
   );
 }
-
-
 
