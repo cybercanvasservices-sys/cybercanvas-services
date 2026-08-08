@@ -104,7 +104,7 @@ export default function ProfilsPage() {
       setPrix("");
       setDuree("");
       await chargerProfils();
-      alert("Profil cree avec succes");
+      alert("Profil créé avec succès.");
     } catch (err) {
       console.error(err);
     } finally {
@@ -215,7 +215,7 @@ export default function ProfilsPage() {
             Nouveau profil
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Cree une offre vendable par lien public.
+            Créez une offre accessible depuis un lien public.
           </p>
 
           <div className="mt-5 grid gap-4">
@@ -243,7 +243,7 @@ export default function ProfilsPage() {
               onChange={(e) =>
                 setDuree(e.target.value)
               }
-              placeholder="Duree, ex: 1 heure"
+              placeholder="Durée, ex. : 1 heure"
               className="rounded-lg border border-slate-300 bg-white p-3 outline-none focus:border-cyan-500"
             />
           </div>
@@ -255,7 +255,7 @@ export default function ProfilsPage() {
           >
             {loading
               ? "Creation..."
-              : "Creer le profil"}
+              : "Créer le profil"}
           </button>
         </section>
 
@@ -263,7 +263,7 @@ export default function ProfilsPage() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-900">
-                Profils crees
+                Profils créés
               </h2>
               <p className="mt-1 text-sm text-slate-500">
                 Import CSV attendu: username,password
@@ -273,7 +273,7 @@ export default function ProfilsPage() {
 
           {profils.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
-              Aucun profil cree.
+              Aucun profil créé.
             </div>
           ) : (
             <div className="grid gap-4">
@@ -401,7 +401,7 @@ export default function ProfilsPage() {
               </label>
 
               <label className="mt-4 block text-sm font-bold text-slate-700">
-                Duree
+                Durée
                 <input
                   value={editDuree}
                   onChange={(event) => setEditDuree(event.target.value)}

@@ -290,7 +290,7 @@ export default function UtilisateursPage() {
 
   function createUser() {
     if (!form.nom.trim() || !form.telephone.trim()) {
-      window.alert("Nom et telephone obligatoires.");
+      window.alert("Le nom et le téléphone sont obligatoires.");
       return;
     }
 
@@ -431,7 +431,7 @@ export default function UtilisateursPage() {
             {pendingCount} demande(s) de compte client en attente de validation.
           </p>
           <p className="mt-1 text-sm">
-            Validez uniquement les comptes identifies. Un compte non valide ne doit pas demarrer ses activites.
+            Validez uniquement les comptes identifiés. Un compte non validé ne peut pas démarrer ses activités.
           </p>
         </div>
       )}
@@ -444,7 +444,7 @@ export default function UtilisateursPage() {
             </div>
             <div>
               <h2 className="text-lg font-black text-slate-900">
-                Creer un client
+                Créer un client
               </h2>
               <p className="text-sm text-slate-500">
                 Ajout manuel par l&apos;administrateur.
@@ -472,7 +472,7 @@ export default function UtilisateursPage() {
             <Input value={form.nom} placeholder="Nom complet" onChange={(value) => setForm((current) => ({ ...current, nom: value }))} />
             <Input value={form.entreprise} placeholder="Entreprise ou zone WiFi" onChange={(value) => setForm((current) => ({ ...current, entreprise: value }))} />
             <Input value={form.email} placeholder="Adresse e-mail" type="email" onChange={(value) => setForm((current) => ({ ...current, email: value }))} />
-            <Input value={form.telephone} placeholder="Telephone" onChange={(value) => setForm((current) => ({ ...current, telephone: value }))} />
+            <Input value={form.telephone} placeholder="Téléphone" onChange={(value) => setForm((current) => ({ ...current, telephone: value }))} />
             <Input value={form.ville} placeholder="Ville ou quartier" onChange={(value) => setForm((current) => ({ ...current, ville: value }))} />
 
             <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-700">
@@ -491,7 +491,7 @@ export default function UtilisateursPage() {
             onClick={createUser}
             className="mt-5 w-full rounded-lg bg-slate-900 px-5 py-3 font-bold text-white hover:bg-slate-700"
           >
-            Creer client actif
+            Créer un client actif
           </button>
         </section>
 
@@ -502,7 +502,7 @@ export default function UtilisateursPage() {
                 Comptes clients
               </h2>
               <p className="text-sm text-slate-500">
-                Validez les inscriptions avant de permettre les activites.
+                Validez les inscriptions avant d’autoriser les activités.
               </p>
             </div>
             <div className="relative w-full md:w-72">
@@ -633,7 +633,7 @@ export default function UtilisateursPage() {
                   <div className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
                     <InfoLine label="Entreprise" value={activeUser.entreprise || "Non renseignee"} />
                     <InfoLine label="Email" value={activeUser.email} />
-                    <InfoLine label="Telephone" value={activeUser.telephone} />
+                    <InfoLine label="Téléphone" value={activeUser.telephone} />
                     <InfoLine label="Ville" value={activeUser.ville} />
                     <InfoLine label="Statut" value={statusLabel(activeUser.statut)} />
                     <InfoLine label="Discussion" value={activeUser.discussion ? "Activee" : "Desactivee"} />
@@ -643,18 +643,18 @@ export default function UtilisateursPage() {
                     <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-600">
-                          Activites du client
+                          Activités du client
                         </p>
                         <h4 className="mt-1 text-lg font-black text-slate-950">
                           Suivi complet
                         </h4>
                       </div>
                       <p className="text-sm font-semibold text-slate-500">
-                        Derniere activite:{" "}
+                        Dernière activité :{" "}
                         <span className="font-black text-slate-900">
                           {activeActivity?.derniereActivite
                             ? new Date(activeActivity.derniereActivite).toLocaleString()
-                            : "Aucune activite"}
+                            : "Aucune activité"}
                         </span>
                       </p>
                     </div>
@@ -671,7 +671,7 @@ export default function UtilisateursPage() {
                         icon={Layers}
                         label="Groupes WiFi"
                         value={activeActivity?.profils || 0}
-                        detail="Offres creees"
+                        detail="Offres créées"
                         tone="bg-slate-900"
                       />
                       <ActivityCard
@@ -708,7 +708,7 @@ export default function UtilisateursPage() {
                     <div className="mt-5 grid gap-4">
                       <DetailPanel
                         title="Profils, tickets et revenus"
-                        empty="Aucun profil cree par ce client."
+                        empty="Aucun profil créé par ce client."
                         items={activeActivity?.details?.profils || []}
                         renderItem={(profil) => (
                           <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] md:items-center">
@@ -728,7 +728,7 @@ export default function UtilisateursPage() {
 
                       <DetailPanel
                         title="Routeurs et informations techniques"
-                        empty="Aucun routeur ajoute par ce client."
+                        empty="Aucun routeur ajouté par ce client."
                         items={activeActivity?.details?.routeurs || []}
                         renderItem={(routeur) => (
                           <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:grid-cols-[1.2fr_0.8fr_1fr_1fr_0.7fr] lg:items-center">
@@ -759,7 +759,7 @@ export default function UtilisateursPage() {
                               </p>
                             </div>
                             <Metric label="Montant" value={formatMoney(vente.montant)} />
-                            <Metric label="Telephone" value={vente.telephone} />
+                            <Metric label="Téléphone" value={vente.telephone} />
                             <Metric label="Statut" value={vente.statut} />
                             <Metric
                               label="Date"

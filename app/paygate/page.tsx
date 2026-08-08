@@ -21,7 +21,7 @@ export default function PaygatePage() {
 
 function PaygateContent() {
   const searchParams = useSearchParams();
-  const profilId = searchParams.get("profil");
+  const profilId = searchParams?.get("profil") || null;
   const [profil, setProfil] = useState<Profil | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +73,7 @@ function PaygateContent() {
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
           CyberCanvas Services
         </p>
-        <h1 className="mb-6 text-4xl font-bold">Paiement securise</h1>
+        <h1 className="mb-6 text-4xl font-bold">Paiement sécurisé</h1>
 
         <div className="mb-4 rounded-xl bg-slate-800 p-4">
           <p className="text-slate-400">Profil WiFi</p>

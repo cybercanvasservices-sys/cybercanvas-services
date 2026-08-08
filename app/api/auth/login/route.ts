@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (!error && client && (await verifyPassword(password, client.password_hash))) {
       if (!client.email_verified) {
         return NextResponse.json(
-          { message: "Veuillez confirmer votre adresse email avant de vous connecter." },
+          { message: "Votre compte a bien été créé, mais votre adresse e-mail n’est pas encore confirmée." },
           { status: 403 }
         );
       }

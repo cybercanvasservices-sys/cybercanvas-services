@@ -5,11 +5,11 @@ export default function ConfigurationPage() {
     <main className="min-h-screen bg-slate-950 p-8 text-white">
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">
-          Parametres
+          Paramètres
         </p>
         <h1 className="mt-2 text-4xl font-bold">Configuration</h1>
         <p className="mt-2 max-w-2xl text-slate-400">
-          Informations de base de CyberCanvas Services et parametres de paiement.
+          Informations générales de CyberCanvas Services et paramètres de paiement.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export default function ConfigurationPage() {
             />
             <input
               type="text"
-              placeholder="Telephone"
+              placeholder="Téléphone"
               className="rounded-xl border border-slate-700 bg-slate-800 p-3 outline-none focus:border-cyan-300"
             />
           </div>

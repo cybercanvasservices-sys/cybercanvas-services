@@ -11,6 +11,7 @@ import {
   LogOut,
   Router,
   Shield,
+  ShoppingBag,
   Ticket,
   User,
   Users,
@@ -112,7 +113,24 @@ export default function Sidebar({
                 pathname={pathname}
                 onNavigate={onClose}
               />
+              <NavLink
+                href="/boutique-admin"
+                label="Gestion boutique"
+                icon={ShoppingBag}
+                pathname={pathname}
+                onNavigate={onClose}
+              />
             </>
+          )}
+
+          {!isAdmin && (
+            <NavLink
+              href="/boutique"
+              label="Boutique"
+              icon={ShoppingBag}
+              pathname={pathname}
+              onNavigate={onClose}
+            />
           )}
 
           {canUseOffers && (
@@ -180,7 +198,7 @@ export default function Sidebar({
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/8 text-red-200">
               <LogOut size={20} />
             </span>
-            Deconnexion
+            Déconnexion
           </button>
         </div>
       </div>

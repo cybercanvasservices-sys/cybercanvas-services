@@ -28,12 +28,12 @@ export default function RegisterPage() {
     setMessage("");
 
     if (!form.nom || !form.telephone || !form.email || !form.password) {
-      setError("Nom, telephone, email et mot de passe sont obligatoires.");
+      setError("Le nom, le téléphone, l’adresse e-mail et le mot de passe sont obligatoires.");
       return;
     }
 
     if (form.password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caracteres.");
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
 
@@ -90,7 +90,7 @@ export default function RegisterPage() {
       return;
     }
 
-    setMessage(result.message || "Un nouveau lien de validation a ete envoye.");
+    setMessage(result.message || "Un nouveau lien de confirmation a été envoyé.");
   }
 
   return (
@@ -160,21 +160,21 @@ export default function RegisterPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#b8ccc6] py-3 font-bold text-[#0a6f61] hover:bg-[#edf4f1] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <RefreshCcw size={18} />
-                  {resending ? "Renvoi en cours..." : "Renvoyer le lien"}
+                  {resending ? "Renvoi en cours..." : "Recevoir un nouveau lien de confirmation"}
                 </button>
 
                 <Link
                   href="/login"
                   className="block w-full rounded-lg bg-[#0a6f61] py-3 text-center font-bold text-white hover:bg-[#075b50]"
                 >
-                  Aller a la connexion
+                  Aller à la connexion
                 </Link>
               </div>
             ) : (
               <form className="space-y-4" onSubmit={handleSubmit}>
-                <Field icon={<User />} value={form.nom} placeholder="Nom et prenom" onChange={(value) => updateField("nom", value)} />
-                <Field icon={<Phone />} value={form.telephone} placeholder="Telephone" type="tel" onChange={(value) => updateField("telephone", value)} />
-                <Field icon={<Mail />} value={form.email} placeholder="Adresse email" type="email" onChange={(value) => updateField("email", value)} />
+                <Field icon={<User />} value={form.nom} placeholder="Nom et prénom" onChange={(value) => updateField("nom", value)} />
+                <Field icon={<Phone />} value={form.telephone} placeholder="Téléphone" type="tel" onChange={(value) => updateField("telephone", value)} />
+                <Field icon={<Mail />} value={form.email} placeholder="Adresse e-mail" type="email" onChange={(value) => updateField("email", value)} />
                 <Field icon={<Lock />} value={form.password} placeholder="Mot de passe" type="password" onChange={(value) => updateField("password", value)} />
                 <Field icon={<Lock />} value={form.confirmPassword} placeholder="Confirmer le mot de passe" type="password" onChange={(value) => updateField("confirmPassword", value)} />
 
@@ -188,13 +188,13 @@ export default function RegisterPage() {
                   type="submit"
                   className="w-full rounded-lg bg-[#0a6f61] py-3 font-bold text-white hover:bg-[#075b50]"
                 >
-                  Creer le compte
+                  Créer le compte
                 </button>
               </form>
             )}
 
             <div className="mt-6 text-center text-slate-600">
-              Deja membre ?
+              Déjà membre ?
               <Link href="/login" className="ml-2 font-bold text-[#0a7566] hover:text-[#075b50]">
                 Connexion
               </Link>

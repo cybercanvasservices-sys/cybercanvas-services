@@ -484,7 +484,7 @@ export default function RoutersPage() {
             </div>
           ) : profilsFiltres.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">
-              Aucun groupe disponible. Creez un groupe dans Mes Groupes.
+              Aucun groupe disponible. Créez un groupe dans « Mes groupes ».
             </div>
           ) : (
             profilsFiltres.map((profil) => {
@@ -632,7 +632,7 @@ export default function RoutersPage() {
                 disabled={saving}
                 className="rounded-lg border border-indigo-500 px-8 py-3 text-sm font-black text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? "Creation..." : "Creer"}
+                {saving ? "Création..." : "Créer"}
               </button>
             </div>
           </form>
@@ -651,7 +651,7 @@ export default function RoutersPage() {
                   Modification : Routeur
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Modifiez les informations du routeur selectionne.
+                  Modifiez les informations du routeur sélectionné.
                 </p>
               </div>
               <button
@@ -774,5 +774,4 @@ function Badge({ label }: { label: string }) {
     </span>
   );
 }
-
 

@@ -14,6 +14,7 @@ import {
 const RETRAIT_MINIMUM = 2000;
 const COMMISSION_RATE = 0.1;
 const SOLDE_DEMO = 0;
+const ADMIN_PHOTO_STORAGE_KEY = "cybercanvas-admin-profile-photo";
 const WHATSAPP_FINALISATION_URL =
   "https://wa.me/22870693326?text=Bonjour%20CyberCanvas%20Services%2C%20je%20viens%20de%20valider%20mon%20email%20et%20je%20souhaite%20finaliser%20mon%20inscription.";
 
@@ -54,7 +55,9 @@ export default function DashboardPage() {
         if (!active) return;
 
         setSession(result);
-        if (result.client?.photo) {
+        if (result.role === "admin") {
+          setPhoto(window.localStorage.getItem(ADMIN_PHOTO_STORAGE_KEY));
+        } else if (result.client?.photo) {
           setPhoto(result.client.photo);
         }
       })
@@ -94,7 +97,7 @@ export default function DashboardPage() {
     if (!file) return;
 
     if (file.size > 700000) {
-      setMessage("Photo trop lourde. Choisissez une image plus legere.");
+      setMessage("Photo trop lourde. Choisissez une image plus légère.");
       return;
     }
 
@@ -104,7 +107,15 @@ export default function DashboardPage() {
       setPhoto(photoData);
       setMessage("");
 
-      if (!isAdmin) {
+      if (isAdmin) {
+        try {
+          window.localStorage.setItem(ADMIN_PHOTO_STORAGE_KEY, photoData);
+          setMessage("Photo de profil enregistrée.");
+        } catch {
+          setPhoto(null);
+          setMessage("Impossible d’enregistrer cette photo dans le navigateur.");
+        }
+      } else {
         const response = await fetch("/api/clients", {
           method: "PATCH",
           headers: {
@@ -115,11 +126,16 @@ export default function DashboardPage() {
         const result = (await response.json()) as { message?: string };
 
         if (!response.ok) {
+          setPhoto(client?.photo || null);
           setMessage(result.message || "Impossible d'enregistrer la photo.");
           return;
         }
 
-        setMessage("Photo de profil enregistree.");
+        setSession((current) => current ? {
+          ...current,
+          client: current.client ? { ...current.client, photo: photoData } : current.client,
+        } : current);
+        setMessage("Photo de profil enregistrée.");
       }
     };
     reader.readAsDataURL(file);
@@ -127,7 +143,7 @@ export default function DashboardPage() {
 
   function demanderRetrait() {
     if (!retraitDisponible) {
-      setMessage(`Retrait disponible a partir de ${RETRAIT_MINIMUM} FCFA.`);
+      setMessage(`Retrait disponible à partir de ${RETRAIT_MINIMUM} FCFA.`);
       return;
     }
 
@@ -147,7 +163,7 @@ export default function DashboardPage() {
               Finalisation du compte
             </p>
             <p className="mt-1 text-sm font-semibold leading-6">
-              Votre email est confirme. Contactez l&apos;administrateur via WhatsApp
+              Votre adresse e-mail est confirmée. Contactez l&apos;administrateur via WhatsApp
               pour finaliser votre inscription et activer tous les services.
             </p>
           </div>
@@ -196,23 +212,23 @@ export default function DashboardPage() {
             </p>
 
             <div className="mt-6 w-full space-y-3 text-left text-sm text-slate-600">
-              <InfoLine label="Role" value={isAdmin ? "Administrateur" : "Client"} />
+              <InfoLine label="Rôle" value={isAdmin ? "Administrateur" : "Client"} />
               <InfoLine
-                label="Etat"
+                label="État"
                 value={statusLabel(accountStatus)}
                 tone={accountStatus === "actif" ? "success" : "warning"}
               />
               <InfoLine
-                label="Email"
-                value={displayEmail || "Non renseigne"}
+                label="Adresse e-mail"
+                value={displayEmail || "Non renseignée"}
               />
               <InfoLine
-                label="Telephone"
-                value={client?.telephone || "Non renseigne"}
+                label="Téléphone"
+                value={client?.telephone || "Non renseigné"}
               />
               <InfoLine
                 label="Ville"
-                value={client?.ville || "Non renseignee"}
+                value={client?.ville || "Non renseignée"}
               />
             </div>
 
@@ -246,12 +262,12 @@ export default function DashboardPage() {
 
           <div className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
             <MiniStat icon={CreditCard} label="Commission" value={`${commission} FCFA`} />
-            <MiniStat icon={CheckCircle2} label="Net estime" value={`${netClient} FCFA`} />
+            <MiniStat icon={CheckCircle2} label="Net estimé" value={`${netClient} FCFA`} />
           </div>
 
           <div className="mt-4 border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            Retrait possible a partir de {RETRAIT_MINIMUM} FCFA. Votre demande sera
-            verifiee avant le paiement. Commission CyberCanvas Services: 10% sur
+            Retrait possible à partir de {RETRAIT_MINIMUM} FCFA. Votre demande sera
+            vérifiée avant le paiement. Commission CyberCanvas Services : 10 % sur
             chaque retrait.
           </div>
 
@@ -330,7 +346,7 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     actif: "Actif",
     en_attente: "En attente",
-    refuse: "Refuse",
+    refuse: "Refusé",
     suspendu: "Suspendu",
   };
 
@@ -356,4 +372,3 @@ function MiniStat({
     </div>
   );
 }
-

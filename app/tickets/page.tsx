@@ -291,7 +291,7 @@ export default function TicketsPage() {
                 <th className="p-4 text-left">Mot de passe</th>
                 <th className="p-4 text-left">Profil</th>
                 <th className="p-4 text-left">Prix</th>
-                <th className="p-4 text-left">Duree</th>
+                <th className="p-4 text-left">Durée</th>
                 <th className="p-4 text-left">Statut</th>
               </tr>
             </thead>
@@ -341,5 +341,4 @@ export default function TicketsPage() {
     </AdminShell>
   );
 }
-
 

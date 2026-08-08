@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Lock } from "lucide-react";
@@ -15,7 +16,7 @@ export default function ResetPasswordPage() {
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
+  const token = searchParams?.get("token") || "";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -50,22 +51,26 @@ function ResetPasswordContent() {
       return;
     }
 
-    setMessage(result.message || "Mot de passe modifie.");
+    setMessage(result.message || "Mot de passe modifié.");
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-slate-900 to-cyan-900 p-4">
-      <section className="w-full max-w-md rounded-3xl border border-cyan-500/20 bg-slate-950/70 p-8 text-white shadow-2xl">
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f7f5] p-4">
+      <section className="w-full max-w-md rounded-xl border border-[#dfe5e1] bg-white p-8 text-[#10231f] shadow-[0_20px_60px_rgba(24,55,48,0.08)]">
+        <div className="mb-6 flex items-center gap-3 border-b border-[#e3e9e6] pb-5">
+          <BrandLogo size={42} />
+          <div><p className="text-sm font-bold">CyberCanvas Services</p><p className="text-xs text-slate-500">Sécurité du compte</p></div>
+        </div>
         <Link
           href="/login"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-cyan-300 hover:text-cyan-100"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#0a7566] hover:text-[#075b50]"
         >
           <ArrowLeft size={16} />
-          Retour connexion
+          Retour à la connexion
         </Link>
 
         <h1 className="text-3xl font-black">Nouveau mot de passe</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-300">
+        <p className="mt-2 text-sm leading-6 text-slate-600">
           Choisissez un nouveau mot de passe pour votre compte.
         </p>
 
@@ -82,13 +87,13 @@ function ResetPasswordContent() {
           />
 
           {error && (
-            <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
               {message}
             </div>
           )}
@@ -96,7 +101,7 @@ function ResetPasswordContent() {
           <button
             type="submit"
             disabled={loading || !token}
-            className="w-full rounded-xl bg-cyan-500 py-3 font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-[#0a6f61] py-3 font-bold text-white transition hover:bg-[#075b50] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Modification..." : "Changer le mot de passe"}
           </button>
@@ -123,7 +128,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-700 bg-slate-800/70 py-3 pl-12 pr-4 text-white outline-none focus:border-cyan-500"
+        className="w-full rounded-lg border border-[#cad6d2] bg-white py-3 pl-12 pr-4 text-[#10231f] outline-none focus:border-[#0a7566] focus:ring-2 focus:ring-[#dcebe6]"
       />
     </div>
   );

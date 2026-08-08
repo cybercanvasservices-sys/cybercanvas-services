@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 export default function VerificationEmailPage() {
   return (
-    <Suspense fallback={<VerificationShell message="Verification en cours..." loading />}>
+    <Suspense fallback={<VerificationShell message="Vérification en cours..." loading />}>
       <VerificationEmailContent />
     </Suspense>
   );
@@ -15,29 +16,27 @@ export default function VerificationEmailPage() {
 
 function VerificationEmailContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
-  const [message, setMessage] = useState("Verification en cours...");
+  const token = searchParams?.get("token") || "";
+  const [message, setMessage] = useState("Vérification en cours...");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
   useEffect(() => {
     async function verifyEmail() {
       if (!token) {
         setStatus("error");
-        setMessage("Lien de verification invalide.");
+        setMessage("Ce lien de vérification est invalide ou incomplet.");
         return;
       }
 
       const response = await fetch("/api/auth/verify-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       });
       const result = (await response.json()) as { message?: string };
 
       setStatus(response.ok ? "success" : "error");
-      setMessage(result.message || "Verification terminee.");
+      setMessage(result.message || "Vérification terminée.");
     }
 
     void verifyEmail();
@@ -55,22 +54,33 @@ function VerificationShell({
   loading?: boolean;
   status?: "loading" | "success" | "error";
 }) {
+  const title = status === "success" ? "Compte vérifié" : status === "error" ? "Vérification impossible" : "Vérification du compte";
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-slate-900 to-cyan-900 p-4">
-      <section className="w-full max-w-md rounded-3xl border border-cyan-500/20 bg-slate-950/70 p-8 text-center text-white shadow-2xl">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f7f5] p-4 text-[#10231f]">
+      <section className="w-full max-w-md rounded-xl border border-[#dfe5e1] bg-white p-8 text-center shadow-[0_20px_60px_rgba(24,55,48,0.08)]">
+        <div className="mb-6 flex items-center justify-center gap-3 border-b border-[#e3e9e6] pb-5 text-left">
+          <BrandLogo size={42} />
+          <div>
+            <p className="text-sm font-bold leading-tight">CyberCanvas Services</p>
+            <p className="text-xs text-slate-500">Activation sécurisée du compte</p>
+          </div>
+        </div>
+
+        <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${
+          status === "success" ? "bg-emerald-100 text-emerald-700" : status === "error" ? "bg-red-100 text-red-700" : "bg-[#dcebe6] text-[#0a7566]"
+        }`}>
           {status === "loading" && <Loader2 className="animate-spin" size={34} />}
           {status === "success" && <CheckCircle2 size={34} />}
           {status === "error" && <XCircle size={34} />}
         </div>
-        <h1 className="mt-6 text-2xl font-black">Verification du compte</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-300">{message}</p>
-        <Link
-          href="/login"
-          className="mt-6 inline-flex rounded-xl bg-cyan-500 px-5 py-3 font-black text-slate-950 hover:bg-cyan-300"
-        >
-          Aller a la connexion
-        </Link>
+        <h1 className="mt-6 text-2xl font-extrabold text-slate-950">{title}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{message}</p>
+        {status !== "loading" && (
+          <Link href="/login" className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-[#0a6f61] px-5 py-3 font-bold text-white hover:bg-[#075b50]">
+            Aller à la connexion
+          </Link>
+        )}
       </section>
     </main>
   );

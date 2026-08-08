@@ -22,7 +22,7 @@ export default function OpenChatWidget() {
     setError("");
 
     if (!form.nom.trim() || !form.email.trim() || !form.telephone.trim()) {
-      setError("Nom, e-mail et telephone sont obligatoires.");
+      setError("Le nom, l’adresse e-mail et le téléphone sont obligatoires.");
       return;
     }
 
@@ -31,7 +31,7 @@ export default function OpenChatWidget() {
         "Bonjour CyberCanvas Services, j'ai besoin d'aide.",
         `Nom prenoms: ${form.nom.trim()}`,
         `E-mail: ${form.email.trim()}`,
-        `Telephone: +228 ${form.telephone.trim()}`,
+        `Téléphone : +228 ${form.telephone.trim()}`,
         `Question: ${form.question.trim() || "Non renseignee"}`,
       ].join("\n")
     );
@@ -95,7 +95,7 @@ export default function OpenChatWidget() {
             />
 
             <label className="block text-xs font-black uppercase tracking-[0.16em] text-slate-300">
-              Telephone <span className="text-cyan-300">*</span>
+              Téléphone <span className="text-cyan-300">*</span>
               <div className="mt-2 flex overflow-hidden rounded-xl border border-white/10 bg-slate-900 focus-within:border-cyan-400">
                 <span className="flex items-center gap-1 border-r border-white/10 px-3 text-sm font-black text-cyan-200">
                   <Phone size={16} />
@@ -104,7 +104,7 @@ export default function OpenChatWidget() {
                 <input
                   value={form.telephone}
                   onChange={(event) => updateField("telephone", event.target.value)}
-                  placeholder="Telephone"
+                  placeholder="Téléphone"
                   className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-white outline-none"
                 />
               </div>
@@ -171,5 +171,4 @@ function ChatInput({
     </label>
   );
 }
-
 

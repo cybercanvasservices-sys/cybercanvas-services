@@ -26,8 +26,8 @@ export default function PayerPage() {
 
 function PayerContent() {
   const searchParams = useSearchParams();
-  const profilId = searchParams.get("profil");
-  const identifier = searchParams.get("identifier");
+  const profilId = searchParams?.get("profil") || null;
+  const identifier = searchParams?.get("identifier") || null;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Verification du paiement...");
@@ -117,5 +117,4 @@ function PageLoading() {
     </main>
   );
 }
-
 

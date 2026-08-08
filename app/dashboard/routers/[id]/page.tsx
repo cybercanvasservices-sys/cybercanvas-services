@@ -131,7 +131,7 @@ export default function RouterDetailsPage({ params }: Props) {
                 {routeur.nom}
               </p>
               <p>
-                <span className="font-bold text-slate-800">Cree le :</span>{" "}
+                <span className="font-bold text-slate-800">Créé le :</span>{" "}
                 {routeur.created_at
                   ? new Date(routeur.created_at).toLocaleString()
                   : "-"}
@@ -185,5 +185,4 @@ function InfoCard({
     </div>
   );
 }
-
 

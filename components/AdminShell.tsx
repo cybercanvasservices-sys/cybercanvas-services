@@ -207,7 +207,7 @@ export default function AdminShell({
                   </a>
                 )}
                 <span className="hidden max-w-56 truncate text-sm font-semibold text-[#405852] md:inline-flex">
-                  {role === "admin" ? "Administrateur connecte" : clientDisplayName}
+                  {role === "admin" ? "Administrateur connecté" : clientDisplayName}
                 </span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#cddbd6] bg-[#edf4f1] text-[#0a7566]">
                   <UserRound size={19} />
@@ -231,8 +231,8 @@ export default function AdminShell({
             <div className="mb-6 flex gap-3 rounded-lg border border-[#dfe5e1] bg-white p-4 text-[#526861]">
               <CircleHelp className="mt-0.5 shrink-0 text-[#0a7566]" size={20} />
               <p className="text-sm leading-6">
-                Parcours recommande: creez une offre WiFi, importez vos tickets
-                CSV, puis ouvrez votre page de vente. Les resultats seront visibles
+                Parcours recommandé : créez une offre WiFi, importez vos tickets
+                CSV, puis ouvrez votre page de vente. Les résultats seront visibles
                 dans Tickets, Recettes et Statistiques.
               </p>
             </div>
@@ -248,7 +248,7 @@ export default function AdminShell({
             Session sur le point d&apos;expirer
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Inactivite detectee. Deconnexion automatique dans{" "}
+            Inactivité détectée. Déconnexion automatique dans{" "}
             <span className="font-black text-slate-950">{idleCountdown}s</span>.
           </p>
           <button
@@ -256,12 +256,11 @@ export default function AdminShell({
             onClick={() => setIdleCountdown(null)}
             className="mt-3 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-black text-slate-950"
           >
-            Je suis toujours la
+            Je suis toujours là
           </button>
         </div>
       )}
     </div>
   );
 }
-
 

@@ -9,6 +9,7 @@ import {
   Network,
   Router,
   ShieldCheck,
+  ShoppingBag,
   Wifi,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ export default function Home() {
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[#405852] md:flex">
             <a href="#services" className="hover:text-[#087f6d]">Services</a>
             <a href="#solution" className="hover:text-[#087f6d]">Notre solution</a>
+            <Link href="/boutique" className="hover:text-[#087f6d]">Boutique</Link>
             <a href="#contact" className="hover:text-[#087f6d]">Contact</a>
           </nav>
 
@@ -130,6 +132,16 @@ export default function Home() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="boutique" className="border-y border-[#dfe5e1] bg-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+          <div className="flex gap-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#dcebe6] text-[#0a7566]"><ShoppingBag size={27} /></div>
+            <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0a7566]">Nouvelle boutique</p><h2 className="mt-2 text-3xl font-extrabold tracking-tight">Équipements réseau et informatique</h2><p className="mt-3 max-w-2xl leading-7 text-[#5d706a]">Commandez vos routeurs MikroTik, points d’accès WiFi, câbles et accessoires. Paiement en ligne et livraison à Lomé et dans les environs.</p></div>
+          </div>
+          <Link href="/boutique" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0a6f61] px-6 py-3.5 font-bold text-white hover:bg-[#075b50]">Visiter la boutique <ArrowUpRight size={18} /></Link>
         </div>
       </section>
 

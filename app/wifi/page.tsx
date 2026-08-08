@@ -9,7 +9,7 @@ const links = [
   {
     href: "/wifi/offres",
     title: "Mes Offres",
-    text: "Creez et gerez vos forfaits WiFi.",
+    text: "Créez et gérez vos forfaits WiFi.",
   },
   {
     href: "/wifi/acces",

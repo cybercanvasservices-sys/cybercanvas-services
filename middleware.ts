@@ -2,7 +2,7 @@
 import type { NextRequest } from "next/server";
 import { verifyAdminSession, verifyClientSession } from "@/lib/admin-session";
 
-const adminOnlyRoutes = ["/utilisateurs", "/vpn-test"];
+const adminOnlyRoutes = ["/utilisateurs", "/vpn-test", "/boutique-admin"];
 
 export async function middleware(request: NextRequest) {
   const adminSession = request.cookies.get("admin_session")?.value;
@@ -37,6 +37,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/abonnements/:path*",
+    "/boutique-admin/:path*",
     "/clients/:path*",
     "/configuration/:path*",
     "/equipements/:path*",
@@ -63,4 +64,3 @@ export const config = {
     "/wifi/:path*",
   ],
 };
-

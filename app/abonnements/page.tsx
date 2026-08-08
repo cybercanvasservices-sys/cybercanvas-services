@@ -7,7 +7,7 @@
         </p>
         <h1 className="mt-3 text-3xl font-black">Gestion des offres clients</h1>
         <p className="mt-4 max-w-2xl text-slate-300">
-          Organisez les offres WiFi, les durees, les prix et les liens de paiement
+          Organisez les offres WiFi, les durées, les prix et les liens de paiement.
           depuis les groupes et les tickets.
         </p>
       </section>

@@ -163,7 +163,7 @@ export default function VentesPage() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Profil, telephone, montant, statut..."
+                placeholder="Profil, téléphone, montant, statut..."
                 className="w-full bg-transparent py-1 text-slate-900 outline-none"
               />
             </span>
@@ -247,7 +247,7 @@ export default function VentesPage() {
                   <th className="p-3">Date</th>
                   <th className="p-3">Profil</th>
                   <th className="p-3">Montant</th>
-                  <th className="p-3">Telephone</th>
+                  <th className="p-3">Téléphone</th>
                   <th className="p-3">Statut</th>
                 </tr>
               </thead>

@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
 
     setMessage(
       result.message ||
-        "Un lien securise vient d'etre envoye a votre adresse email. Consultez votre boite de reception ou vos courriers indesirables pour continuer; ce lien expire dans 1 heure."
+        "Un lien sécurisé vient d’être envoyé à votre adresse e-mail. Consultez votre boîte de réception ou vos courriers indésirables. Ce lien expire dans une heure."
     );
     setSent(true);
   }
@@ -56,15 +56,15 @@ export default function ForgotPasswordPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#0a7566] hover:text-[#075b50]"
         >
           <ArrowLeft size={16} />
-          Retour connexion
+          Retour à la connexion
         </Link>
 
         {sent ? (
           <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <CheckCircle2 size={36} />
             </div>
-            <h1 className="mt-5 text-3xl font-black">Lien envoye</h1>
+            <h1 className="mt-5 text-3xl font-black">Lien envoyé</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {message}
             </p>
@@ -72,22 +72,22 @@ export default function ForgotPasswordPage() {
               href="/login"
               className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-[#0a6f61] py-3 font-bold text-white hover:bg-[#075b50]"
             >
-              Retour a la connexion
+              Retour à la connexion
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="text-3xl font-black">Mot de passe oublie</h1>
+            <h1 className="text-3xl font-black">Mot de passe oublié</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Entrez l&apos;adresse e-mail associee a votre compte. Si elle existe,
-              nous vous envoyons un lien securise pour changer votre mot de passe.
+              Entrez l&apos;adresse e-mail associée à votre compte. Si elle existe,
+              nous vous enverrons un lien sécurisé pour modifier votre mot de passe.
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
               <Field
                 icon={<Mail />}
                 value={email}
-                placeholder="Adresse email"
+                placeholder="Adresse e-mail"
                 type="email"
                 onChange={setEmail}
               />
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 className="w-full rounded-lg bg-[#0a6f61] py-3 font-bold text-white hover:bg-[#075b50] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Verification..." : "Recevoir le lien"}
+                {loading ? "Vérification..." : "Recevoir le lien"}
               </button>
             </form>
           </>

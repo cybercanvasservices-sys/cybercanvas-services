@@ -161,7 +161,7 @@ export default function RetraitsPage() {
     }
 
     setMontant("");
-    setMessage("Demande de retrait envoyee. Elle sera verifiee avant paiement.");
+    setMessage("Demande de retrait envoyée. Elle sera vérifiée avant le paiement.");
     await refreshRetraits();
   }
 

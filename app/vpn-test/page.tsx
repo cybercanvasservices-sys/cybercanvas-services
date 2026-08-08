@@ -237,7 +237,7 @@ export default function VpnTestPage() {
                       onClick={() => setPassword(generateSecret())}
                       className="rounded-lg border border-slate-300 px-3 text-sm font-black text-slate-700 hover:bg-slate-50"
                     >
-                      Generer
+                      Générer
                     </button>
                   </div>
                 </Field>
@@ -306,7 +306,7 @@ export default function VpnTestPage() {
               2. Ouvrez le terminal du routeur, collez le script, puis validez.
             </li>
             <li className="rounded-xl bg-slate-50 p-3">
-              3. Verifiez que l&apos;interface VPN est active et que le routeur ping le
+              3. Vérifiez que l&apos;interface VPN est active et que le routeur atteint le
               serveur VPN.
             </li>
             <li className="rounded-xl bg-slate-50 p-3">
@@ -352,7 +352,7 @@ export default function VpnTestPage() {
 
           <div className="mt-5 rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-800">
             Gardez les mots de passe, cles et identifiants VPN dans un endroit
-            securise. Ces informations ne doivent pas etre envoyees au client
+            sécurisé. Ces informations ne doivent pas être envoyées au client
             tant que le service VPN n&apos;est pas officiellement active.
           </div>
         </section>
@@ -386,7 +386,7 @@ export default function VpnTestPage() {
         <div className="mt-5 grid gap-3">
           {tests.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm font-semibold text-slate-500">
-              Aucun test VPN ajoute pour le moment.
+              Aucun test VPN ajouté pour le moment.
             </div>
           ) : (
             tests.map((test) => (

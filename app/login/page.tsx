@@ -4,7 +4,7 @@ import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Home, Lock, RefreshCcw, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Home, Lock, MailCheck, RefreshCcw, ShieldCheck, User } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -24,7 +24,7 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState(
     searchParams?.get("reason") === "inactive"
-      ? "Votre session a expire pour cause d'inactivite. Reconnectez-vous pour continuer."
+      ? "Votre session a expiré pour cause d’inactivité. Reconnectez-vous pour continuer."
       : ""
   );
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -56,7 +56,10 @@ function LoginContent() {
 
       const message = result.message || "Connexion impossible";
       setError(message);
-      setNeedsVerification(message.toLowerCase().includes("confirmer"));
+      setNeedsVerification(
+        message.toLowerCase().includes("confirmer") ||
+        message.toLowerCase().includes("confirmée")
+      );
       setLoading(false);
       return;
     }
@@ -67,7 +70,7 @@ function LoginContent() {
 
   async function resendVerification() {
     if (!email) {
-      setError("Saisissez votre adresse email avant de demander un nouveau lien.");
+      setError("Saisissez votre adresse e-mail avant de demander un nouveau lien.");
       return;
     }
 
@@ -91,7 +94,7 @@ function LoginContent() {
       return;
     }
 
-    setInfo(result.message || "Un nouveau lien de validation a ete envoye.");
+    setInfo(result.message || "Un nouveau lien de confirmation a été envoyé.");
     setNeedsVerification(false);
   }
 
@@ -100,7 +103,7 @@ function LoginContent() {
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">
-            Adresse email
+            Adresse e-mail
           </label>
           <div className="relative">
           <User className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" />
@@ -137,14 +140,28 @@ function LoginContent() {
           </div>
         </div>
 
-        {error && (
-          <div className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+        {error && !needsVerification && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700" role="alert">
             {error}
           </div>
         )}
 
+        {needsVerification && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950" role="alert">
+            <div className="flex items-start gap-3">
+              <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <div>
+                <p className="font-bold">Confirmez votre adresse e-mail</p>
+                <p className="mt-1 text-sm leading-6 text-amber-900">
+                  Votre compte existe, mais il n’est pas encore activé. Ouvrez l’e-mail que nous vous avons envoyé et cliquez sur le lien de confirmation.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {info && (
-          <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-sm text-cyan-100">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800" role="status">
             {info}
           </div>
         )}
@@ -163,10 +180,10 @@ function LoginContent() {
             type="button"
             onClick={resendVerification}
             disabled={resending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 py-3 font-bold text-cyan-100 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#0a6f61] bg-white py-3 font-bold text-[#0a6f61] transition hover:bg-[#edf5f2] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCcw size={18} />
-            {resending ? "Renvoi en cours..." : "Renvoyer le mail de validation"}
+            {resending ? "Envoi en cours..." : "Recevoir un nouveau lien de confirmation"}
           </button>
         )}
       </form>
