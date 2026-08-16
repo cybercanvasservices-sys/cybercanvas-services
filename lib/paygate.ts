@@ -189,11 +189,30 @@ export async function deliverTicketAfterPayment({
   }
 
   const numericProfilId = Number(profilId);
-  const { data: profil } = await supabase
+  const { data: profil, error: profilError } = await supabase
     .from("profils")
     .select("prix, owner_email")
     .eq("id", numericProfilId)
     .single<Profil>();
+
+  if (profilError || !profil) {
+    return {
+      success: false,
+      status: 404,
+      message: "Profil WiFi introuvable",
+      data: payment.data,
+    };
+  }
+
+  const paidAmount = Number(payment.data?.amount ?? payment.data?.amount_paid ?? 0);
+  if (paidAmount > 0 && paidAmount !== Number(profil.prix)) {
+    return {
+      success: false,
+      status: 400,
+      message: "Le montant du paiement ne correspond pas au profil WiFi",
+      data: payment.data,
+    };
+  }
 
   const ticketDispo = await db
     .prepare(
@@ -219,16 +238,31 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  await supabase.from("ventes").insert([
+  const { error: venteError } = await supabase.from("ventes").insert([
     {
       profil_id: ticketDispo.profil_id,
       ticket_id: ticketDispo.id,
-      montant: profil?.prix || 0,
+      // Commission de 10 % prelevee sur chaque ticket vendu
+      montant: Math.max(Number(profil.prix) - Math.round(Number(profil.prix) * 0.1), 0),
       telephone: payment.data?.phone_number || "",
       statut: "paye",
-      owner_email: profil?.owner_email || ticketDispo.owner_email || null,
+      owner_email: profil.owner_email || ticketDispo.owner_email || null,
     },
   ]);
+
+  if (venteError) {
+    await db
+      .prepare("update tickets set statut = 'disponible', sale_identifier = null, sold_at = null where id = ?")
+      .bind(ticketDispo.id)
+      .run();
+
+    return {
+      success: false,
+      status: 500,
+      message: "Le paiement est confirme, mais l enregistrement du credit a echoue",
+      data: payment.data,
+    };
+  }
 
   return {
     success: true,

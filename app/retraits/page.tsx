@@ -5,8 +5,6 @@ import AdminShell from "@/components/AdminShell";
 import { CheckCircle2, Clock, Search, Send, Wallet, XCircle } from "lucide-react";
 
 const RETRAIT_MINIMUM = 2000;
-const COMMISSION_RATE = 0.1;
-
 type RetraitStatus = "en_attente" | "valide" | "refuse";
 
 type RetraitRequest = {
@@ -47,10 +45,7 @@ function formatMoney(value: number) {
 }
 
 function calculateAmounts(montant: number) {
-  const commission = Math.round(montant * COMMISSION_RATE);
-  const net = Math.max(montant - commission, 0);
-
-  return { commission, net };
+  return { commission: 0, net: Math.max(montant, 0) };
 }
 
 export default function RetraitsPage() {
@@ -161,7 +156,7 @@ export default function RetraitsPage() {
     }
 
     setMontant("");
-    setMessage("Demande de retrait envoyée. Elle sera vérifiée avant le paiement.");
+    setMessage("Demande de retrait envoyee. Elle sera verifiee avant paiement.");
     await refreshRetraits();
   }
 
@@ -206,7 +201,7 @@ export default function RetraitsPage() {
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Retrait minimum: {RETRAIT_MINIMUM} FCFA. Commission CyberCanvas
-              Services: 10% sur chaque retrait.
+              La commission de 10% est deja prelevee sur chaque ticket vendu.
             </p>
           </div>
 

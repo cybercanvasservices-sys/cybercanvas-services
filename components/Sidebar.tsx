@@ -114,6 +114,13 @@ export default function Sidebar({
                 onNavigate={onClose}
               />
               <NavLink
+                href="/commissions"
+                label="Commissions"
+                icon={Banknote}
+                pathname={pathname}
+                onNavigate={onClose}
+              />
+              <NavLink
                 href="/boutique-admin"
                 label="Gestion boutique"
                 icon={ShoppingBag}

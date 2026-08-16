@@ -1,20 +1,26 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import AdminShell from "@/components/AdminShell";
 import {
+  Activity,
+  ArrowUpRight,
+  BarChart3,
+  Router,
   Camera,
   CheckCircle2,
   CreditCard,
   MessageCircle,
+  ShieldCheck,
+  Ticket,
+  Star,
+  Upload,
   User,
   Wallet,
 } from "lucide-react";
 
 const RETRAIT_MINIMUM = 2000;
-const COMMISSION_RATE = 0.1;
-const SOLDE_DEMO = 0;
-const ADMIN_PHOTO_STORAGE_KEY = "cybercanvas-admin-profile-photo";
 const WHATSAPP_FINALISATION_URL =
   "https://wa.me/22870693326?text=Bonjour%20CyberCanvas%20Services%2C%20je%20viens%20de%20valider%20mon%20email%20et%20je%20souhaite%20finaliser%20mon%20inscription.";
 
@@ -41,32 +47,41 @@ export default function DashboardPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [session, setSession] = useState<SessionProfile | null>(null);
+  const [solde, setSolde] = useState(0);
 
-  const commission = Math.round(SOLDE_DEMO * COMMISSION_RATE);
-  const netClient = Math.max(SOLDE_DEMO - commission, 0);
-  const retraitDisponible = SOLDE_DEMO >= RETRAIT_MINIMUM;
+  const commission = 0;
+  const netClient = solde;
+  const retraitDisponible = solde >= RETRAIT_MINIMUM;
 
   useEffect(() => {
     let active = true;
 
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((result: SessionProfile) => {
+    async function refreshDashboard() {
+      try {
+        const sessionResponse = await fetch("/api/auth/me", { cache: "no-store" });
+        const result = (await sessionResponse.json()) as SessionProfile;
         if (!active) return;
 
         setSession(result);
-        if (result.role === "admin") {
-          setPhoto(window.localStorage.getItem(ADMIN_PHOTO_STORAGE_KEY));
-        } else if (result.client?.photo) {
-          setPhoto(result.client.photo);
+        const ventesResponse = await fetch("/api/ventes", { cache: "no-store" });
+        if (ventesResponse.ok) {
+          const ventesResult = (await ventesResponse.json()) as { ventes?: { montant?: number | null }[] };
+          setSolde((ventesResult.ventes || []).reduce((total, vente) => total + Number(vente.montant || 0), 0));
         }
-      })
-      .catch(() => {
+        if (result.client?.photo) setPhoto(result.client.photo);
+      } catch {
         if (active) setSession(null);
-      });
+      }
+    }
+
+    void refreshDashboard();
+    window.addEventListener("focus", refreshDashboard);
+    const interval = window.setInterval(refreshDashboard, 15000);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", refreshDashboard);
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -97,7 +112,7 @@ export default function DashboardPage() {
     if (!file) return;
 
     if (file.size > 700000) {
-      setMessage("Photo trop lourde. Choisissez une image plus légère.");
+      setMessage("Photo trop lourde. Choisissez une image plus legere.");
       return;
     }
 
@@ -107,15 +122,7 @@ export default function DashboardPage() {
       setPhoto(photoData);
       setMessage("");
 
-      if (isAdmin) {
-        try {
-          window.localStorage.setItem(ADMIN_PHOTO_STORAGE_KEY, photoData);
-          setMessage("Photo de profil enregistrée.");
-        } catch {
-          setPhoto(null);
-          setMessage("Impossible d’enregistrer cette photo dans le navigateur.");
-        }
-      } else {
+      if (!isAdmin) {
         const response = await fetch("/api/clients", {
           method: "PATCH",
           headers: {
@@ -126,16 +133,11 @@ export default function DashboardPage() {
         const result = (await response.json()) as { message?: string };
 
         if (!response.ok) {
-          setPhoto(client?.photo || null);
           setMessage(result.message || "Impossible d'enregistrer la photo.");
           return;
         }
 
-        setSession((current) => current ? {
-          ...current,
-          client: current.client ? { ...current.client, photo: photoData } : current.client,
-        } : current);
-        setMessage("Photo de profil enregistrée.");
+        setMessage("Photo de profil enregistree.");
       }
     };
     reader.readAsDataURL(file);
@@ -143,7 +145,7 @@ export default function DashboardPage() {
 
   function demanderRetrait() {
     if (!retraitDisponible) {
-      setMessage(`Retrait disponible à partir de ${RETRAIT_MINIMUM} FCFA.`);
+      setMessage(`Retrait disponible a partir de ${RETRAIT_MINIMUM} FCFA.`);
       return;
     }
 
@@ -151,8 +153,34 @@ export default function DashboardPage() {
   }
 
   return (
-    <AdminShell title="Mon Profil" breadcrumb="Accueil">
-      {!isActiveClient && (
+    <AdminShell title="Tableau de bord" breadcrumb="Vue d&apos;ensemble">
+      <section className="mb-6 rounded-2xl border border-slate-200 bg-slate-900 p-6 text-white shadow-sm sm:p-8">
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Espace CyberCanvas</p>
+            <h2 className="mt-2 text-2xl font-black sm:text-3xl">Bonjour, {displayName}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Retrouvez ici l&apos;&eacute;tat de vos services, vos acc&egrave;s rapides et les derni&egrave;res actions &agrave; effectuer.</p>
+          </div>
+          <Link href="/wifi/offres" className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-300">G&eacute;rer mes offres <ArrowUpRight size={17} /></Link>
+        </div>
+      </section>
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetric icon={Activity} label="État du service" value={isActiveClient ? "Actif" : "En attente"} tone={isActiveClient ? "success" : "warning"} />
+        <DashboardMetric icon={Ticket} label="Tickets disponibles" value="0" />
+        <DashboardMetric icon={Wallet} label="Solde actuel" value={`${solde.toLocaleString("fr-FR")} FCFA`} />
+        <DashboardMetric icon={ShieldCheck} label="Compte sécurisé" value={client?.email_verified || isAdmin ? "Vérifié" : "À vérifier"} tone={client?.email_verified || isAdmin ? "success" : "warning"} />
+      </section>
+      <section className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Acc&egrave;s rapides</p><h2 className="mt-1 text-lg font-black text-slate-900">G&eacute;rer votre activit&eacute;</h2></div><Activity className="text-cyan-700" size={22} /></div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <QuickAction href="/wifi/offres" title="Offres WiFi" text="Cr&eacute;er et g&eacute;rer vos offres" icon={Ticket} />
+            <QuickAction href="/routeurs" title="Routeurs" text="Suivre vos &eacute;quipements" icon={Router} />
+            <QuickAction href="/statistiques" title="Statistiques" text="Analyser votre activit&eacute;" icon={BarChart3} />
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Prochaine &eacute;tape</p><h2 className="mt-1 text-lg font-black text-slate-900">Activez votre espace</h2><p className="mt-3 text-sm leading-6 text-slate-500">Configurez votre premi&egrave;re offre et connectez un routeur pour commencer &agrave; vendre vos acc&egrave;s WiFi.</p><Link href="/wifi/offres" className="mt-5 inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900">Commencer <ArrowUpRight size={16} /></Link></div>
+      </section>      {!isActiveClient && (
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-cyan-950 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white">
@@ -163,7 +191,7 @@ export default function DashboardPage() {
               Finalisation du compte
             </p>
             <p className="mt-1 text-sm font-semibold leading-6">
-              Votre adresse e-mail est confirmée. Contactez l&apos;administrateur via WhatsApp
+              Votre email est confirme. Contactez l&apos;administrateur via WhatsApp
               pour finaliser votre inscription et activer tous les services.
             </p>
           </div>
@@ -180,19 +208,38 @@ export default function DashboardPage() {
       </div>
       )}
 
-      <div className="mb-5">
-        <h2 className="text-xl font-bold text-slate-950">Vue d&apos;ensemble du compte</h2>
-        <p className="mt-1 text-sm text-slate-500">Consultez vos informations, votre statut et votre solde.</p>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-        <section className="border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <CardTitle title="Profil" />
+      {isAdmin && (
+        <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-amber-700">
+                Test administrateur
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-6">
+                Preparez et testez les scripts VPN MikroTik v6/v7 avant de les
+                proposer aux clients.
+              </p>
+            </div>
           </div>
+          <a
+            href="/vpn-test"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+          >
+            <ShieldCheck size={18} />
+            Ouvrir VPN test
+          </a>
+        </div>
+      )}
 
-          <div className="flex flex-col items-center px-6 py-7 text-center">
-            <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-slate-100 text-slate-500">
+      <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <CardTitle title="Etat general" />
+
+          <div className="mt-7 flex flex-col items-center text-center">
+            <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500">
               {photo ? (
                 <div
                   className="h-full w-full bg-cover bg-center"
@@ -200,118 +247,163 @@ export default function DashboardPage() {
                   aria-label="Photo du profil"
                 />
               ) : (
-                <User size={42} strokeWidth={1.7} />
+                <User size={58} strokeWidth={1.8} />
               )}
             </div>
 
-            <h2 className="mt-4 text-lg font-bold text-slate-950">
+            <h2 className="mt-5 text-xl font-black text-slate-900">
               {displayName}
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="text-sm font-semibold text-slate-500">
               {displaySubtitle}
             </p>
 
-            <div className="mt-6 w-full space-y-3 text-left text-sm text-slate-600">
-              <InfoLine label="Rôle" value={isAdmin ? "Administrateur" : "Client"} />
+            <div className="mt-5 w-full space-y-3 text-left text-sm font-semibold text-slate-600">
+              <InfoLine label="Role" value={isAdmin ? "Administrateur" : "Client"} />
               <InfoLine
-                label="État"
+                label="Etat"
                 value={statusLabel(accountStatus)}
                 tone={accountStatus === "actif" ? "success" : "warning"}
               />
               <InfoLine
-                label="Adresse e-mail"
-                value={displayEmail || "Non renseignée"}
+                label="Email"
+                value={displayEmail || "Non renseigne"}
               />
               <InfoLine
-                label="Téléphone"
-                value={client?.telephone || "Non renseigné"}
+                label="Telephone"
+                value={client?.telephone || "Non renseigne"}
               />
               <InfoLine
                 label="Ville"
-                value={client?.ville || "Non renseignée"}
+                value={client?.ville || "Non renseignee"}
               />
             </div>
-
-            <label className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-              <Camera size={17} />
-              Modifier la photo
-              <input type="file" accept="image/*" className="hidden" onChange={choisirPhoto} />
-            </label>
           </div>
         </section>
 
-        <div className="space-y-6">
-        <section className="border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4"><CardTitle title="Portefeuille" /></div>
-          <div className="p-6">
-          <div className="bg-[#123d6b] p-6 text-white">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <CardTitle title="Autres informations" />
+
+          <div className="mt-7 space-y-5">
+            <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+                Identifiant compte
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
+                  {initials}
+                </div>
+                <div>
+                  <p className="font-black text-slate-950">{displayName}</p>
+                  <p className="text-sm font-semibold text-slate-500">
+                    {isAdmin ? "Espace administrateur" : "Espace client"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyan-50">
+              <Camera size={18} />
+              Changer la photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={choisirPhoto}
+              />
+            </label>
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                Evaluation service
+              </p>
+              <div className="mt-3 flex items-center gap-1 text-amber-400">
+                {[0, 1, 2, 3, 4].map((item) => (
+                  <Star key={item} size={22} fill="currentColor" />
+                ))}
+              </div>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                {isActiveClient
+                  ? "Votre espace est pret pour gerer vos services WiFi."
+                  : "Vos services WiFi seront actifs apres validation admin."}
+              </p>
+            </div>
+
+            <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 px-4 py-3 text-sm font-black text-violet-700 transition hover:bg-violet-50">
+              <Upload size={18} />
+              Charger une piece
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <CardTitle title="Portefeuille" />
+
+          <div className="mt-7 rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-500 p-5 text-white shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-white/75">
+                <p className="text-sm font-bold text-white/80">
                   Solde portefeuille
                 </p>
-                <p className="mt-2 text-3xl font-bold">
-                  {SOLDE_DEMO.toLocaleString("fr-FR")} FCFA
+                <p className="mt-1 text-3xl font-black">
+                  {solde.toLocaleString("fr-FR")} FCFA
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-white/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/18">
                 <Wallet size={28} />
               </div>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+          <div className="mt-5 grid gap-3 text-sm font-bold text-slate-700 sm:grid-cols-2">
             <MiniStat icon={CreditCard} label="Commission" value={`${commission} FCFA`} />
-            <MiniStat icon={CheckCircle2} label="Net estimé" value={`${netClient} FCFA`} />
+            <MiniStat icon={CheckCircle2} label="Net estime" value={`${netClient} FCFA`} />
           </div>
 
-          <div className="mt-4 border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            Retrait possible à partir de {RETRAIT_MINIMUM} FCFA. Votre demande sera
-            vérifiée avant le paiement. Commission CyberCanvas Services : 10 % sur
-            chaque retrait.
+          <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+            Retrait possible a partir de {RETRAIT_MINIMUM} FCFA. Votre demande sera
+            vérifiée avant le paiement. La commission CyberCanvas Services de 10% est deja prelevee sur chaque ticket vendu.
           </div>
 
           {message && (
-            <p className="mt-4 border border-blue-200 bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+            <p className="mt-4 rounded-xl border border-cyan-100 bg-cyan-50 p-3 text-sm font-bold text-cyan-800">
               {message}
             </p>
           )}
 
-          <div className="mt-5 flex justify-end">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-300 px-4 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyan-50">
+              <ShieldCheck size={18} />
+              Charger
+            </button>
             <button
               onClick={demanderRetrait}
-              className="flex items-center justify-center gap-2 rounded-md bg-[#123d6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0c2f55]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-300 px-4 py-3 text-sm font-black text-emerald-700 transition hover:bg-emerald-50"
             >
               <Wallet size={18} />
               Retrait
             </button>
           </div>
-          </div>
         </section>
-
-        <section className="border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4"><CardTitle title="Informations du compte" /></div>
-          <div className="grid gap-5 p-6 sm:grid-cols-2">
-            <div className="flex items-center gap-4 border border-slate-200 p-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-slate-900 text-sm font-bold text-white">{initials}</div>
-              <div><p className="font-semibold text-slate-950">{displayName}</p><p className="text-sm text-slate-500">{isAdmin ? "Administrateur" : "Client"}</p></div>
-            </div>
-            <div className="border border-slate-200 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Accès aux services</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{isActiveClient ? "Votre espace est actif et prêt à être utilisé." : "Activation en attente de validation administrative."}</p>
-            </div>
-          </div>
-        </section>
-        </div>
       </div>
     </AdminShell>
   );
 }
 
+function DashboardMetric({ icon: Icon, label, value, tone }: { icon: React.ElementType; label: string; value: string; tone?: "success" | "warning" }) {
+  const color = tone === "success" ? "text-emerald-700 bg-emerald-50" : tone === "warning" ? "text-amber-700 bg-amber-50" : "text-cyan-700 bg-cyan-50";
+  const valueColor = tone === "success" ? "text-emerald-700" : tone === "warning" ? "text-amber-700" : "text-slate-900";
+  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}><Icon size={20} /></div><p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</p><p className={`mt-1 text-xl font-black ${valueColor}`}>{value}</p></div>;
+}
+
+function QuickAction({ href, title, text, icon: Icon }: { href: string; title: string; text: string; icon: React.ElementType }) {
+  return <Link href={href} className="group rounded-xl border border-slate-200 p-4 hover:border-cyan-300 hover:bg-cyan-50"><Icon className="text-cyan-700" size={20} /><p className="mt-3 text-sm font-black text-slate-900">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></Link>;
+}
 function CardTitle({ title }: { title: string }) {
   return (
     <div>
-      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+      <h2 className="text-center text-lg font-black text-slate-700">{title}</h2>
+      <div className="mt-5 h-px bg-slate-200" />
     </div>
   );
 }
@@ -327,10 +419,10 @@ function InfoLine({
 }) {
   const toneClass =
     tone === "success"
-      ? "font-semibold text-emerald-700"
+      ? "font-black text-emerald-600"
       : tone === "warning"
-        ? "font-semibold text-amber-700"
-        : "font-semibold text-slate-950";
+        ? "font-black text-amber-600"
+        : "font-black text-slate-950";
 
   return (
     <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
@@ -346,7 +438,7 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     actif: "Actif",
     en_attente: "En attente",
-    refuse: "Refusé",
+    refuse: "Refuse",
     suspendu: "Suspendu",
   };
 
@@ -363,12 +455,15 @@ function MiniStat({
   value: string;
 }) {
   return (
-    <div className="border border-slate-200 bg-slate-50 p-4">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <Icon className="text-slate-500" size={20} />
       <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-base font-semibold text-slate-950">{value}</p>
+      <p className="mt-1 text-base font-black text-slate-950">{value}</p>
     </div>
   );
 }
+
+
+

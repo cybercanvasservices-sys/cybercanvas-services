@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -26,13 +26,15 @@ export default function PayerPage() {
 
 function PayerContent() {
   const searchParams = useSearchParams();
-  const profilId = searchParams?.get("profil") || null;
-  const identifier = searchParams?.get("identifier") || null;
+  const profilId = searchParams.get("profil");
+  const identifier = searchParams.get("identifier");
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Verification du paiement...");
 
   useEffect(() => {
+    let cancelled = false;
+
     async function verifierPaiement() {
       try {
         if (!profilId || !identifier) {
@@ -41,21 +43,29 @@ function PayerContent() {
           return;
         }
 
-        const response = await fetch("/api/paygate/confirm", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            profilId,
-            identifier,
-          }),
-        });
+        let resultat: ConfirmResponse | null = null;
 
-        const resultat = (await response.json()) as ConfirmResponse;
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          const response = await fetch("/api/paygate/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profilId, identifier }),
+            cache: "no-store",
+          });
 
-        if (!response.ok || !resultat.success || !resultat.ticket) {
-          setMessage(resultat.message || "Paiement non confirme");
+          resultat = (await response.json()) as ConfirmResponse;
+          if (response.ok && resultat.success && resultat.ticket) break;
+
+          if (attempt < 9) {
+            setMessage("Paiement en cours de confirmation...");
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+        }
+
+        if (cancelled) return;
+
+        if (!resultat?.success || !resultat.ticket) {
+          setMessage(resultat?.message || "Paiement non confirme");
           setLoading(false);
           return;
         }
@@ -63,13 +73,17 @@ function PayerContent() {
         setTicket(resultat.ticket);
         setMessage(resultat.message || "Paiement valide avec succes");
       } catch {
-        setMessage("Erreur lors de la verification");
+        if (!cancelled) setMessage("Erreur lors de la verification");
       }
 
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
 
     void verifierPaiement();
+
+    return () => {
+      cancelled = true;
+    };
   }, [identifier, profilId]);
 
   return (
@@ -90,16 +104,20 @@ function PayerContent() {
           <div className="space-y-4">
             <div className="rounded-xl bg-emerald-950 p-4 text-emerald-100">
               {message}
+            </div>            <div className="rounded-xl border border-cyan-300/40 bg-cyan-950/70 p-5 text-center">
+              <p className="text-lg font-black text-cyan-200">Voici le code de votre ticket WiFi</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-cyan-100">
+                Veuillez prendre note de ces informations ou faire une capture d’écran avant de fermer cette page.
+              </p>
             </div>
-
             <div className="rounded-xl bg-slate-800 p-4">
               <p className="text-slate-400">Identifiant</p>
-              <p className="text-2xl font-bold">{ticket.username}</p>
+              <p className="text-center text-4xl font-black tracking-widest break-all sm:text-5xl">{ticket.username}</p>
             </div>
 
             <div className="rounded-xl bg-slate-800 p-4">
               <p className="text-slate-400">Mot de passe</p>
-              <p className="text-2xl font-bold">{ticket.password}</p>
+              <p className="text-center text-4xl font-black tracking-widest break-all sm:text-5xl">{ticket.password}</p>
             </div>
           </div>
         )}
@@ -117,4 +135,5 @@ function PageLoading() {
     </main>
   );
 }
+
 

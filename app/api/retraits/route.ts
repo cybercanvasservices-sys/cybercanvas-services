@@ -3,8 +3,6 @@ import { getRequestAccess } from "@/lib/access-control";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 const RETRAIT_MINIMUM = 2000;
-const COMMISSION_RATE = 0.1;
-
 type RetraitStatus = "en_attente" | "valide" | "refuse";
 
 function clean(value: unknown) {
@@ -20,10 +18,7 @@ function isActiveClient(access: Awaited<ReturnType<typeof getRequestAccess>>) {
 }
 
 function calculateAmounts(montant: number) {
-  const commission = Math.round(montant * COMMISSION_RATE);
-  const net = Math.max(montant - commission, 0);
-
-  return { commission, net };
+  return { commission: 0, net: Math.max(montant, 0) };
 }
 
 export async function GET(request: NextRequest) {
