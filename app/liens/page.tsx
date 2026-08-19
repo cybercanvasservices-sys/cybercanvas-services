@@ -22,7 +22,7 @@ export default function LiensPage() {
   useEffect(() => {
     async function chargerProfils() {
       const { data, error } = await supabase
-        .from("profils")
+        .from("public_profils")
         .select("id, nom, prix, duree, slug")
         .order("id", { ascending: false });
 

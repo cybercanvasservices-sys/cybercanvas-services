@@ -62,7 +62,7 @@ export default function TicketsPage() {
     async function chargerDonnees() {
       try {
         const { data: profilsData, error: profilsError } = await supabase
-          .from("profils")
+          .from("public_profils")
           .select("id, nom, prix, duree")
           .order("id", { ascending: false });
 

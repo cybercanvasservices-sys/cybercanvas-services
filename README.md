@@ -35,16 +35,18 @@ PAYGATE_WEBHOOK_SECRET=
 
 Important: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET` et `PAYGATE_TOKEN` doivent rester cote serveur. Ne pas les exposer dans le code client.
 
-## Base Supabase
+## Base de donnees
 
-Executer le script `SUPABASE_SETUP.sql` dans Supabase SQL Editor pour creer ou completer les tables necessaires.
+Executer les migrations dans l'ordre documente dans `migrations/README.md` :
 
-Tables principales:
+- Supabase : fichiers `migrations/supabase/*.sql` dans Supabase SQL Editor.
+- Cloudflare D1 : `npm run migrate:d1:remote`.
+- Migration des anciennes ventes Supabase vers D1 : `npm run migrate:ventes`.
 
-- `routers`
-- `profils`
-- `tickets`
-- `ventes`
+Tables principales :
+
+- Supabase : `routers`, `profils`, `clients`, `retraits`
+- Cloudflare D1 : `tickets`, `ventes`
 
 ## PayGate
 

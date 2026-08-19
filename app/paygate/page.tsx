@@ -28,7 +28,7 @@ function PaygateContent() {
     async function load() {
       try {
         if (!profilId) return;
-        const { data, error } = await supabase.from("profils").select("id, nom, prix, slug").eq("id", Number(profilId)).single<Profil>();
+        const { data, error } = await supabase.from("public_profils").select("id, nom, prix, slug").eq("id", Number(profilId)).single<Profil>();
         if (!error) setProfil(data);
       } finally {
         setLoading(false);
