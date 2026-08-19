@@ -70,7 +70,7 @@ async function handleCallback(req: Request) {
       pickValue(payload, profilKeys) ||
       extractProfilIdFromIdentifier(identifier || "");
 
-    if (!identifier || !profilId) {
+    if (!identifier || !/^TICKET-\d+-/.test(identifier) || !profilId) {
       return NextResponse.json(
         {
           success: false,

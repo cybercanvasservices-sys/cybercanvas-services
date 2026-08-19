@@ -64,10 +64,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const token = `RTR-${Math.random()
-    .toString(36)
-    .slice(2, 10)
-    .toUpperCase()}-${Date.now()}`;
+  const token = `RTR-${crypto
+    .randomUUID()
+    .replaceAll("-", "")
+    .slice(0, 12)
+    .toUpperCase()}`;
 
   const fullPayload = {
     nom,

@@ -5,7 +5,7 @@ import {
   createAdminSession,
   getAdminSessionMaxAge,
 } from "@/lib/admin-session";
-import { verifyPassword } from "@/lib/passwords";
+import { hashPassword, isLegacyHash, verifyPassword } from "@/lib/passwords";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
@@ -107,6 +107,13 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!error && client && (await verifyPassword(password, client.password_hash))) {
+      if (client.password_hash && isLegacyHash(client.password_hash)) {
+        await supabase
+          .from("clients")
+          .update({ password_hash: await hashPassword(password) })
+          .eq("email", email);
+      }
+
       if (!client.email_verified) {
         return NextResponse.json(
           { message: "Votre compte a bien été créé, mais votre adresse e-mail n’est pas encore confirmée." },

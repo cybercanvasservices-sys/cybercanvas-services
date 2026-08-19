@@ -41,7 +41,7 @@ function base64UrlDecode(input: string) {
 }
 
 function getSessionSecret() {
-  return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || "";
+  return process.env.ADMIN_SESSION_SECRET || "";
 }
 
 async function sign(value: string) {

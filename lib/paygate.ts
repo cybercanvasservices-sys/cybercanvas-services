@@ -204,8 +204,8 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  const paidAmount = Number(payment.data?.amount ?? payment.data?.amount_paid ?? 0);
-  if (paidAmount > 0 && paidAmount !== Number(profil.prix)) {
+  const paidAmount = Number(payment.data?.amount ?? payment.data?.amount_paid);
+  if (!paidAmount || paidAmount !== Number(profil.prix)) {
     return {
       success: false,
       status: 400,
