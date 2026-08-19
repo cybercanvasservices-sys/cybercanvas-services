@@ -69,7 +69,27 @@ alter table public.routers add column if not exists owner_email text;
 alter table public.profils add column if not exists owner_email text;
 alter table public.ventes add column if not exists owner_email text;
 
-create index if not exists idx_routers_owner_email on public.routers(owner_email);
-create index if not exists idx_profils_owner_email on public.profils(owner_email);
-create index if not exists idx_ventes_owner_email on public.ventes(owner_email);
+-- Index sur owner_email : cree seulement si la colonne existe (une table
+-- pre-existante avec un ancien schema pourrait ne pas l'avoir).
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'routers' and column_name = 'owner_email') then
+    create index if not exists idx_routers_owner_email on public.routers(owner_email);
+  end if;
+end $$;
+
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profils' and column_name = 'owner_email') then
+    create index if not exists idx_profils_owner_email on public.profils(owner_email);
+  end if;
+end $$;
+
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'ventes' and column_name = 'owner_email') then
+    create index if not exists idx_ventes_owner_email on public.ventes(owner_email);
+  end if;
+end $$;
+
 create index if not exists idx_ventes_created_at on public.ventes(created_at desc);

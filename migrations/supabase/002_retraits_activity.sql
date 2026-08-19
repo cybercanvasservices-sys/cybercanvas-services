@@ -25,7 +25,15 @@ alter table public.retraits
   add column if not exists numero_paiement text,
   add column if not exists note_admin text;
 
-create index if not exists idx_retraits_owner_email on public.retraits(owner_email);
+-- Index sur owner_email : cree seulement si la colonne existe (un ancien
+-- schema retraits pourrait ne pas l'avoir).
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'retraits' and column_name = 'owner_email') then
+    create index if not exists idx_retraits_owner_email on public.retraits(owner_email);
+  end if;
+end $$;
+
 create index if not exists idx_retraits_statut on public.retraits(statut);
 create index if not exists idx_retraits_created_at on public.retraits(created_at desc);
 
@@ -39,6 +47,12 @@ create table if not exists public.activity_logs (
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_activity_logs_owner_email on public.activity_logs(owner_email);
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'activity_logs' and column_name = 'owner_email') then
+    create index if not exists idx_activity_logs_owner_email on public.activity_logs(owner_email);
+  end if;
+end $$;
+
 create index if not exists idx_activity_logs_action on public.activity_logs(action);
 create index if not exists idx_activity_logs_created_at on public.activity_logs(created_at desc);
