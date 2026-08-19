@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 type Vente = {
   id: number;
@@ -14,54 +13,47 @@ type Ticket = {
   statut: string;
 };
 
-type Profil = {
-  id: number;
-};
-
 export default function StatistiquesPage() {
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [profils, setProfils] = useState<Profil[]>([]);
+  const [profilsCount, setProfilsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     async function chargerStatistiques() {
-      const [
-        ventesResult,
-        ticketsResult,
-        profilsResult,
-      ] = await Promise.all([
-        supabase
-          .from("ventes")
-          .select("id, montant, created_at")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("tickets")
-          .select("id, statut"),
-        supabase
-          .from("profils")
-          .select("id"),
-      ]);
+      try {
+        const [ventesResponse, ticketsResponse, profilsResponse] =
+          await Promise.all([
+            fetch("/api/ventes", { cache: "no-store" }),
+            fetch("/api/tickets", { cache: "no-store" }),
+            fetch("/api/profils", { cache: "no-store" }),
+          ]);
 
-      if (ventesResult.error) {
-        console.error(ventesResult.error);
+        const [ventesResult, ticketsResult, profilsResult] = await Promise.all([
+          ventesResponse.json(),
+          ticketsResponse.json(),
+          profilsResponse.json(),
+        ]);
+
+        if (!active) return;
+
+        setVentes(ventesResult.ventes || []);
+        setTickets(ticketsResult.tickets || []);
+        setProfilsCount((profilsResult.profils || []).length);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (active) setLoading(false);
       }
-
-      if (ticketsResult.error) {
-        console.error(ticketsResult.error);
-      }
-
-      if (profilsResult.error) {
-        console.error(profilsResult.error);
-      }
-
-      setVentes(ventesResult.data || []);
-      setTickets(ticketsResult.data || []);
-      setProfils(profilsResult.data || []);
-      setLoading(false);
     }
 
     void chargerStatistiques();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const stats = useMemo(() => {
@@ -88,10 +80,10 @@ export default function StatistiquesPage() {
       revenus,
       ticketsVendus,
       ticketsDisponibles,
-      profils: profils.length,
+      profils: profilsCount,
       ventesAujourdhui: ventesAujourdhui.length,
     };
-  }, [profils.length, tickets, ventes]);
+  }, [profilsCount, tickets, ventes]);
 
   return (
     <main className="min-h-screen p-8 text-white">
