@@ -1,27 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
 import { getRequestAccess } from "@/lib/access-control";
-import { ensureShopSchema, type ShopProduct } from "@/lib/shop";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
+import type { ShopProduct } from "@/lib/shop";
 
 export async function GET(request: NextRequest) {
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
 
   const access = await getRequestAccess(request);
-  const query = access?.role === "admin"
-    ? "select * from shop_products order by id desc"
-    : "select * from shop_products where actif = 1 and stock > 0 order by id desc";
-  const { results } = await db.prepare(query).all<ShopProduct>();
-  return NextResponse.json({ produits: results || [] });
+
+  let query = supabase
+    .from("shop_products")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if (access?.role !== "admin") {
+    query = query.eq("actif", true).gt("stock", 0);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ message: "Erreur lors de la lecture des produits." }, { status: 500 });
+  }
+
+  return NextResponse.json({ produits: (data || []) as ShopProduct[] });
 }
 
 export async function POST(request: NextRequest) {
   const access = await getRequestAccess(request);
   if (access?.role !== "admin") return NextResponse.json({ message: "Accès administrateur requis." }, { status: 403 });
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
   const body = await request.json();
   const nom = String(body.nom || "").trim();
   const description = String(body.description || "").trim();
@@ -29,39 +41,82 @@ export async function POST(request: NextRequest) {
   const prix = Math.round(Number(body.prix));
   const stock = Math.max(0, Math.round(Number(body.stock)));
   const imageUrl = String(body.image_url || "").trim();
+
   if (!nom || !description || !Number.isFinite(prix) || prix <= 0) {
     return NextResponse.json({ message: "Nom, description et prix valide obligatoires." }, { status: 400 });
   }
-  const produit = await db.prepare(`insert into shop_products
-    (nom, description, categorie, prix, stock, image_url, actif)
-    values (?, ?, ?, ?, ?, ?, 1) returning *`)
-    .bind(nom, description, categorie, prix, stock, imageUrl || null).first<ShopProduct>();
-  return NextResponse.json({ produit }, { status: 201 });
+
+  const { data, error } = await supabase
+    .from("shop_products")
+    .insert({
+      nom,
+      description,
+      categorie,
+      prix,
+      stock,
+      image_url: imageUrl || null,
+      actif: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ message: "Erreur lors de la création du produit." }, { status: 500 });
+  }
+
+  return NextResponse.json({ produit: data as ShopProduct }, { status: 201 });
 }
 
 export async function PATCH(request: NextRequest) {
   const access = await getRequestAccess(request);
   if (access?.role !== "admin") return NextResponse.json({ message: "Accès administrateur requis." }, { status: 403 });
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
   const body = await request.json();
   const id = Number(body.id);
   if (!id) return NextResponse.json({ message: "Article introuvable." }, { status: 400 });
-  const produit = await db.prepare(`update shop_products set nom = ?, description = ?, categorie = ?,
-    prix = ?, stock = ?, image_url = ?, actif = ?, updated_at = current_timestamp where id = ? returning *`)
-    .bind(String(body.nom || "").trim(), String(body.description || "").trim(), String(body.categorie || "Équipements réseau").trim(), Math.round(Number(body.prix)), Math.max(0, Math.round(Number(body.stock))), String(body.image_url || "").trim() || null, body.actif === false || body.actif === 0 ? 0 : 1, id)
-    .first<ShopProduct>();
-  return NextResponse.json({ produit });
+
+  const { data, error } = await supabase
+    .from("shop_products")
+    .update({
+      nom: String(body.nom || "").trim(),
+      description: String(body.description || "").trim(),
+      categorie: String(body.categorie || "Équipements réseau").trim(),
+      prix: Math.round(Number(body.prix)),
+      stock: Math.max(0, Math.round(Number(body.stock))),
+      image_url: String(body.image_url || "").trim() || null,
+      actif: body.actif === false || body.actif === 0 ? false : true,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ message: "Erreur lors de la mise à jour du produit." }, { status: 500 });
+  }
+
+  return NextResponse.json({ produit: data as ShopProduct });
 }
 
 export async function DELETE(request: NextRequest) {
   const access = await getRequestAccess(request);
   if (access?.role !== "admin") return NextResponse.json({ message: "Accès administrateur requis." }, { status: 403 });
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
   const id = Number(new URL(request.url).searchParams.get("id"));
-  await db.prepare("update shop_products set actif = 0, updated_at = current_timestamp where id = ?").bind(id).run();
+
+  const { error } = await supabase
+    .from("shop_products")
+    .update({ actif: false })
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ message: "Erreur lors de la désactivation du produit." }, { status: 500 });
+  }
+
   return NextResponse.json({ success: true });
 }

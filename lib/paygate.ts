@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import { ensureVentesSchema, getTicketsDb } from "@/lib/cloudflare-d1";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type Ticket = {
   id: number;
@@ -51,17 +50,6 @@ export type TicketDeliveryResult =
       message: string;
       data?: PaygateStatus;
     };
-
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey);
-}
 
 export function buildPaygateIdentifier(profilId: number) {
   return `TICKET-${profilId}-${crypto.randomUUID()}`;
@@ -207,20 +195,7 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  const db = await getTicketsDb();
-
-  if (!db) {
-    return {
-      success: false,
-      status: 500,
-      message: "Base tickets Cloudflare D1 non configuree",
-      data: payment.data,
-    };
-  }
-
-  await ensureVentesSchema(db);
-
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
     return {
@@ -263,75 +238,24 @@ export async function deliverTicketAfterPayment({
     0
   );
 
-  const existingTicket = await db
-    .prepare(
-      `select id, username, password, profil_id, owner_email
-       from tickets
-       where sale_identifier = ? and statut = 'vendu'
-       limit 1`
-    )
-    .bind(identifier)
-    .first<Ticket>();
+  const { data: soldTicket, error } = await supabase.rpc("sell_ticket", {
+    p_identifier: identifier,
+    p_profil_id: numericProfilId,
+    p_montant: montantNet,
+    p_telephone: telephone,
+    p_owner_email: profil.owner_email || null,
+  });
 
-  if (existingTicket) {
-    const ownerEmail = profil.owner_email || existingTicket.owner_email || null;
-
-    await db
-      .prepare(
-        `insert or ignore into ventes
-         (profil_id, ticket_id, montant, telephone, statut, owner_email, sale_identifier)
-         values (?, ?, ?, ?, 'paye', ?, ?)`
-      )
-      .bind(
-        existingTicket.profil_id,
-        existingTicket.id,
-        montantNet,
-        telephone,
-        ownerEmail,
-        identifier
-      )
-      .run();
-
-    const saved = await db
-      .prepare("select id from ventes where sale_identifier = ?")
-      .bind(identifier)
-      .first<{ id: number }>();
-
-    if (!saved) {
-      return {
-        success: false,
-        status: 500,
-        message:
-          "Le paiement est confirme, mais l enregistrement du credit a echoue",
-        data: payment.data,
-      };
-    }
-
+  if (error) {
     return {
-      success: true,
-      status: 200,
-      message: "Paiement deja confirme",
-      ticket: existingTicket,
+      success: false,
+      status: 500,
+      message: "Erreur lors de l enregistrement de la vente",
       data: payment.data,
     };
   }
 
-  const ticketDispo = await db
-    .prepare(
-      `update tickets
-       set statut = 'vendu', sale_identifier = ?, sold_at = current_timestamp
-       where id = (
-         select id from tickets
-         where profil_id = ? and statut = 'disponible'
-         order by id asc
-         limit 1
-       )
-       returning id, username, password, profil_id, owner_email`
-    )
-    .bind(identifier, numericProfilId)
-    .first<Ticket>();
-
-  if (!ticketDispo) {
+  if (!soldTicket || !soldTicket.id) {
     return {
       success: false,
       status: 404,
@@ -340,51 +264,19 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  const ownerEmail = profil.owner_email || ticketDispo.owner_email || null;
-
-  await db
-    .prepare(
-      `insert into ventes
-       (profil_id, ticket_id, montant, telephone, statut, owner_email, sale_identifier)
-       values (?, ?, ?, ?, 'paye', ?, ?)`
-    )
-    .bind(
-      ticketDispo.profil_id,
-      ticketDispo.id,
-      montantNet,
-      telephone,
-      ownerEmail,
-      identifier
-    )
-    .run();
-
-  const saved = await db
-    .prepare("select id from ventes where sale_identifier = ?")
-    .bind(identifier)
-    .first<{ id: number }>();
-
-  if (!saved) {
-    await db
-      .prepare(
-        "update tickets set statut = 'disponible', sale_identifier = null, sold_at = null where id = ?"
-      )
-      .bind(ticketDispo.id)
-      .run();
-
-    return {
-      success: false,
-      status: 500,
-      message:
-        "Le paiement est confirme, mais l enregistrement du credit a echoue",
-      data: payment.data,
-    };
-  }
+  const ticket: Ticket = {
+    id: soldTicket.id,
+    username: soldTicket.username,
+    password: soldTicket.password,
+    profil_id: soldTicket.profil_id,
+    owner_email: profil.owner_email || null,
+  };
 
   return {
     success: true,
     status: 200,
     message: "Paiement valide avec succes",
-    ticket: ticketDispo,
+    ticket,
     data: payment.data,
   };
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRequestAccess } from "@/lib/access-control";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type TicketStat = {
   profil_id: number;
@@ -22,33 +22,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
-  const db = await getTicketsDb();
+  const supabase = getSupabaseAdminClient();
 
-  if (!db) {
+  if (!supabase) {
     return NextResponse.json(
-      { message: "Base Cloudflare D1 non configuree." },
+      { message: "Configuration Supabase serveur manquante." },
       { status: 500 }
     );
   }
 
-  const query =
-    access.role === "client"
-      ? db
-          .prepare(
-            `select profil_id, statut, count(*) as total
-             from tickets
-             where owner_email = ?
-             group by profil_id, statut`
-          )
-          .bind(access.email)
-      : db.prepare(
-          `select profil_id, statut, count(*) as total
-           from tickets
-           where owner_email is null
-           group by profil_id, statut`
-        );
+  let query = supabase.from("tickets").select("profil_id, statut");
 
-  const { results } = await query.all<TicketStat>();
+  if (access.role === "client") {
+    query = query.eq("owner_email", access.email);
+  } else {
+    query = query.is("owner_email", null);
+  }
 
-  return NextResponse.json({ stats: results || [] });
+  const { data } = await query;
+
+  const stats = new Map<string, TicketStat>();
+
+  (data || []).forEach((row) => {
+    const key = `${row.profil_id}:${row.statut}`;
+    const current = stats.get(key) || {
+      profil_id: row.profil_id,
+      statut: row.statut,
+      total: 0,
+    };
+    current.total += 1;
+    stats.set(key, current);
+  });
+
+  return NextResponse.json({ stats: Array.from(stats.values()) });
 }

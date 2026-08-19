@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { getRequestAccess, type RequestAccess } from "@/lib/access-control";
-import { ensureVentesSchema, getTicketsDb } from "@/lib/cloudflare-d1";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type Vente = {
   id: number;
@@ -21,17 +20,6 @@ type Profil = {
   nom: string;
 };
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey);
-}
-
 async function isAuthorized(request: NextRequest) {
   const access = await getRequestAccess(request);
 
@@ -49,7 +37,7 @@ async function isAuthorized(request: NextRequest) {
 }
 
 async function getProfilsMap(access: RequestAccess) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) return new Map<number, Profil>();
 
@@ -73,44 +61,44 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
-  const db = await getTicketsDb();
+  const supabase = getSupabaseAdminClient();
 
-  if (!db) {
+  if (!supabase) {
     return NextResponse.json(
-      { message: "Base Cloudflare D1 non configuree." },
+      { message: "Configuration Supabase serveur manquante." },
       { status: 500 }
     );
   }
 
-  await ensureVentesSchema(db);
-
-  let query;
+  let query = supabase
+    .from("ventes")
+    .select("id, profil_id, ticket_id, montant, telephone, statut, owner_email, sale_identifier, created_at")
+    .order("id", { ascending: false });
 
   if (access.role === "client") {
-    query = db
-      .prepare("select * from ventes where owner_email = ? order by id desc")
-      .bind(access.email);
+    query = query.eq("owner_email", access.email);
   } else {
-    query = db.prepare(
-      "select * from ventes where owner_email is null order by id desc"
-    );
+    query = query.is("owner_email", null);
   }
 
-  const [{ results }, profils] = await Promise.all([
-    query.all<Vente>(),
+  const [{ data: results }, profils] = await Promise.all([
+    query,
     getProfilsMap(access),
   ]);
 
   return NextResponse.json({
-    ventes: (results || []).map((vente) => ({
-      id: vente.id,
-      montant: vente.montant,
-      telephone: vente.telephone,
-      statut: vente.statut,
-      created_at: vente.created_at,
-      profils: profils.get(vente.profil_id)
-        ? { nom: profils.get(vente.profil_id)!.nom }
-        : null,
-    })),
+    ventes: (results || []).map((vente) => {
+      const v = vente as Vente;
+      const profil = profils.get(v.profil_id);
+
+      return {
+        id: v.id,
+        montant: v.montant,
+        telephone: v.telephone,
+        statut: v.statut,
+        created_at: v.created_at,
+        profils: profil ? { nom: profil.nom } : null,
+      };
+    }),
   });
 }

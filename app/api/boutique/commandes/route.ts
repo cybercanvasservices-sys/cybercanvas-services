@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
 import { getRequestAccess } from "@/lib/access-control";
-import { buildShopPaymentIdentifier, ensureShopSchema, type ShopProduct } from "@/lib/shop";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
+import { buildShopPaymentIdentifier } from "@/lib/shop";
+
+const ALLOWED_STATUS = ["en_attente", "paye", "en_preparation", "expedie", "livre", "annule"];
 
 export async function GET(request: NextRequest) {
   const access = await getRequestAccess(request);
   if (access?.role !== "admin") return NextResponse.json({ message: "Accès administrateur requis." }, { status: 403 });
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
-  const { results } = await db.prepare(`select o.*, p.nom as produit_nom from shop_orders o
-    left join shop_products p on p.id = o.product_id order by o.id desc`).all();
-  return NextResponse.json({ commandes: results || [] });
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
+  const [{ data: orders }, { data: products }] = await Promise.all([
+    supabase.from("shop_orders").select("*").order("id", { ascending: false }),
+    supabase.from("shop_products").select("id, nom"),
+  ]);
+
+  const productNomById = new Map((products || []).map((p) => [p.id, p.nom]));
+
+  const commandes = (orders || []).map((order) => ({
+    ...order,
+    produit_nom: productNomById.get(order.product_id) || "Produit inconnu",
+  }));
+
+  return NextResponse.json({ commandes });
 }
 
 export async function POST(request: NextRequest) {
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
   const body = await request.json();
   const productId = Number(body.product_id);
   const quantite = Math.max(1, Math.min(20, Math.round(Number(body.quantite) || 1)));
@@ -27,32 +40,77 @@ export async function POST(request: NextRequest) {
   const adresse = String(body.adresse || "").trim();
   const ville = String(body.ville || "").trim();
   const note = String(body.note || "").trim();
+
   if (!productId || !nom || !telephone || !adresse || !ville) {
     return NextResponse.json({ message: "Nom, téléphone, ville et adresse de livraison obligatoires." }, { status: 400 });
   }
-  const produit = await db.prepare("select * from shop_products where id = ? and actif = 1").bind(productId).first<ShopProduct>();
-  if (!produit || produit.stock < quantite) return NextResponse.json({ message: "Stock insuffisant pour cet article." }, { status: 409 });
-  const montant = produit.prix * quantite;
-  const commande = await db.prepare(`insert into shop_orders
-    (product_id, quantite, montant, nom_client, telephone, email, adresse, ville, note)
-    values (?, ?, ?, ?, ?, ?, ?, ?, ?) returning id`)
-    .bind(productId, quantite, montant, nom, telephone, email || null, adresse, ville, note || null).first<{ id: number }>();
-  if (!commande) return NextResponse.json({ message: "Impossible de créer la commande." }, { status: 500 });
+
+  const { data: produit, error: produitError } = await supabase
+    .from("shop_products")
+    .select("id, prix, stock")
+    .eq("id", productId)
+    .eq("actif", true)
+    .single();
+
+  if (produitError || !produit) return NextResponse.json({ message: "Stock insuffisant pour cet article." }, { status: 409 });
+  if (Number(produit.stock) < quantite) return NextResponse.json({ message: "Stock insuffisant pour cet article." }, { status: 409 });
+
+  const montant = Number(produit.prix) * quantite;
+
+  const { data: commande, error: commandeError } = await supabase
+    .from("shop_orders")
+    .insert({
+      product_id: productId,
+      quantite,
+      montant,
+      nom_client: nom,
+      telephone,
+      email: email || null,
+      adresse,
+      ville,
+      note: note || null,
+      statut: "en_attente",
+    })
+    .select("id")
+    .single();
+
+  if (commandeError || !commande) return NextResponse.json({ message: "Impossible de créer la commande." }, { status: 500 });
+
   const identifier = buildShopPaymentIdentifier(commande.id);
-  await db.prepare("update shop_orders set payment_identifier = ? where id = ?").bind(identifier, commande.id).run();
-  return NextResponse.json({ commande: { id: commande.id, montant, identifier }, paymentUrl: `/boutique/payer/${commande.id}` }, { status: 201 });
+
+  const { error: identifierError } = await supabase
+    .from("shop_orders")
+    .update({ payment_identifier: identifier })
+    .eq("id", commande.id);
+
+  if (identifierError) return NextResponse.json({ message: "Impossible de créer la commande." }, { status: 500 });
+
+  return NextResponse.json(
+    { commande: { id: commande.id, montant, identifier }, paymentUrl: `/boutique/payer/${commande.id}` },
+    { status: 201 }
+  );
 }
 
 export async function PATCH(request: NextRequest) {
   const access = await getRequestAccess(request);
   if (access?.role !== "admin") return NextResponse.json({ message: "Accès administrateur requis." }, { status: 403 });
-  const db = await getTicketsDb();
-  if (!db) return NextResponse.json({ message: "Base Cloudflare D1 indisponible." }, { status: 500 });
-  await ensureShopSchema(db);
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
+
   const body = await request.json();
-  const allowed = ["en_attente", "paye", "en_preparation", "expedie", "livre", "annule"];
   const statut = String(body.statut || "");
-  if (!allowed.includes(statut)) return NextResponse.json({ message: "Statut invalide." }, { status: 400 });
-  await db.prepare("update shop_orders set statut = ? where id = ?").bind(statut, Number(body.id)).run();
+  const id = Number(body.id);
+
+  if (!ALLOWED_STATUS.includes(statut)) return NextResponse.json({ message: "Statut invalide." }, { status: 400 });
+  if (!id) return NextResponse.json({ message: "Commande introuvable." }, { status: 400 });
+
+  const { error } = await supabase
+    .from("shop_orders")
+    .update({ statut })
+    .eq("id", id);
+
+  if (error) return NextResponse.json({ message: "Erreur lors de la mise à jour de la commande." }, { status: 500 });
+
   return NextResponse.json({ success: true });
 }

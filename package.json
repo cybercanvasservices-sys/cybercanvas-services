@@ -4,18 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "migrate:d1": "node scripts/apply-d1-migrations.mjs --remote",
-    "migrate:d1:local": "node scripts/apply-d1-migrations.mjs --local",
-    "migrate:ventes": "node scripts/migrate-ventes-supabase-to-d1.mjs --remote",
-    "migrate:ventes:dry": "node scripts/migrate-ventes-supabase-to-d1.mjs --dry-run",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "postinstall": "opennextjs-cloudflare build"
+    "migrate:data": "node scripts/migrate-d1-to-supabase.mjs --remote",
+    "migrate:data:dry": "node scripts/migrate-d1-to-supabase.mjs --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -28,7 +21,6 @@
     "recharts": "^3.8.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.19.11",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -36,7 +28,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "wrangler": "^4.104.0"
+    "typescript": "^5"
   }
 }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { getRequestAccess, type RequestAccess } from "@/lib/access-control";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
+import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type Profil = {
   id: number;
@@ -10,7 +9,7 @@ type Profil = {
   duree: string;
 };
 
-type D1Ticket = {
+type TicketRow = {
   id: number;
   profil_id: number;
   owner_email: string | null;
@@ -18,17 +17,6 @@ type D1Ticket = {
   password: string;
   statut: string;
 };
-
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey);
-}
 
 async function isAuthorized(request: NextRequest) {
   const access = await getRequestAccess(request);
@@ -47,7 +35,7 @@ async function isAuthorized(request: NextRequest) {
 }
 
 async function getProfilsMap(access: RequestAccess) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) return new Map<number, Profil>();
 
@@ -66,7 +54,7 @@ async function getProfilsMap(access: RequestAccess) {
   return new Map((data || []).map((profil) => [profil.id, profil as Profil]));
 }
 
-function withProfil(ticket: D1Ticket, profils: Map<number, Profil>) {
+function withProfil(ticket: TicketRow, profils: Map<number, Profil>) {
   return {
     id: ticket.id,
     username: ticket.username,
@@ -83,49 +71,42 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
-  const db = await getTicketsDb();
+  const supabase = getSupabaseAdminClient();
 
-  if (!db) {
+  if (!supabase) {
     return NextResponse.json(
-      { message: "Base Cloudflare D1 non configuree." },
+      { message: "Configuration Supabase serveur manquante." },
       { status: 500 }
     );
   }
 
   const profilId = request.nextUrl.searchParams.get("profil_id");
-  let query;
 
-  if (access.role === "client" && profilId) {
-    query = db
-      .prepare(
-        "select id, profil_id, owner_email, username, password, statut from tickets where profil_id = ? and owner_email = ? order by id desc limit 5000"
-      )
-      .bind(Number(profilId), access.email);
-  } else if (access.role === "client") {
-    query = db
-      .prepare(
-        "select id, profil_id, owner_email, username, password, statut from tickets where owner_email = ? order by id desc limit 5000"
-      )
-      .bind(access.email);
-  } else if (profilId) {
-    query = db
-      .prepare(
-        "select id, profil_id, owner_email, username, password, statut from tickets where profil_id = ? and owner_email is null order by id desc limit 5000"
-      )
-      .bind(Number(profilId));
+  let query = supabase
+    .from("tickets")
+    .select("id, profil_id, owner_email, username, password, statut")
+    .order("id", { ascending: false })
+    .limit(5000);
+
+  if (access.role === "client") {
+    query = query.eq("owner_email", access.email);
   } else {
-    query = db.prepare(
-      "select id, profil_id, owner_email, username, password, statut from tickets where owner_email is null order by id desc limit 5000"
-    );
+    query = query.is("owner_email", null);
   }
 
-  const [{ results }, profils] = await Promise.all([
-    query.all<D1Ticket>(),
+  if (profilId) {
+    query = query.eq("profil_id", Number(profilId));
+  }
+
+  const [{ data: results }, profils] = await Promise.all([
+    query,
     getProfilsMap(access),
   ]);
 
   return NextResponse.json({
-    tickets: (results || []).map((ticket) => withProfil(ticket, profils)),
+    tickets: (results || []).map((ticket) =>
+      withProfil(ticket as TicketRow, profils)
+    ),
   });
 }
 
@@ -136,11 +117,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
-  const db = await getTicketsDb();
+  const supabase = getSupabaseAdminClient();
 
-  if (!db) {
+  if (!supabase) {
     return NextResponse.json(
-      { message: "Base Cloudflare D1 non configuree." },
+      { message: "Configuration Supabase serveur manquante." },
       { status: 500 }
     );
   }
@@ -172,20 +153,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Profil administrateur non autorise." }, { status: 403 });
   }
 
-  const statements = tickets.map((ticket) =>
-    db
-      .prepare(
-        "insert or ignore into tickets (profil_id, owner_email, username, password, statut) values (?, ?, ?, ?, 'disponible')"
-      )
-      .bind(profilId, access.role === "client" ? access.email : null, ticket.username, ticket.password)
-  );
+  const rows = tickets.map((ticket) => ({
+    profil_id: profilId,
+    owner_email: access.role === "client" ? access.email : null,
+    username: ticket.username,
+    password: ticket.password,
+    statut: "disponible",
+  }));
 
-  if (db.batch) {
-    await db.batch(statements);
-  } else {
-    for (const statement of statements) {
-      await statement.run();
-    }
+  const { error } = await supabase
+    .from("tickets")
+    .upsert(rows, { onConflict: "profil_id,username", ignoreDuplicates: true });
+
+  if (error) {
+    return NextResponse.json(
+      { message: "Erreur lors de l import des tickets." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
@@ -201,11 +185,11 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "Non autorise." }, { status: 401 });
   }
 
-  const db = await getTicketsDb();
+  const supabase = getSupabaseAdminClient();
 
-  if (!db) {
+  if (!supabase) {
     return NextResponse.json(
-      { message: "Base Cloudflare D1 non configuree." },
+      { message: "Configuration Supabase serveur manquante." },
       { status: 500 }
     );
   }
@@ -220,23 +204,28 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
+  let query = supabase.from("tickets").delete().eq("profil_id", profilId);
+
   if (access.role === "client") {
-    await db
-      .prepare("delete from tickets where profil_id = ? and owner_email = ?")
-      .bind(profilId, access.email)
-      .run();
+    query = query.eq("owner_email", access.email);
   } else {
-    await db
-      .prepare("delete from tickets where profil_id = ? and owner_email is null")
-      .bind(profilId)
-      .run();
+    query = query.is("owner_email", null);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    return NextResponse.json(
+      { message: "Erreur lors de la suppression des tickets." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true });
 }
 
 async function adminOwnsProfil(profilId: number) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) return false;
 
@@ -251,7 +240,7 @@ async function adminOwnsProfil(profilId: number) {
 }
 
 async function clientOwnsProfil(email: string, profilId: number) {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdminClient();
 
   if (!supabase) return false;
 

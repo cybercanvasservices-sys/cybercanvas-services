@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-session";
-import { ensureVentesSchema, getTicketsDb } from "@/lib/cloudflare-d1";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type ActivitySummary = {
@@ -60,13 +59,6 @@ type RetraitRow = OwnerRow & {
   net?: number | null;
   statut?: string | null;
   created_at?: string | null;
-};
-
-type TicketStatRow = {
-  owner_email: string | null;
-  profil_id: number | null;
-  statut: string | null;
-  total: number;
 };
 
 type ProfilRow = OwnerRow & {
@@ -255,19 +247,12 @@ export async function GET(request: NextRequest) {
     summary.details.profils.push(detail);
   });
 
-  const db = await getTicketsDb();
-  let d1Ventes: VenteRow[] = [];
+  const { data: ventesData } = await supabase
+    .from("ventes")
+    .select("id, profil_id, montant, telephone, statut, owner_email, created_at")
+    .order("id", { ascending: false });
 
-  if (db) {
-    await ensureVentesSchema(db);
-    const ventesResult = await db
-      .prepare(
-        "select id, profil_id, montant, telephone, statut, owner_email, created_at from ventes order by id desc"
-      )
-      .all<VenteRow>();
-
-    d1Ventes = ventesResult.results || [];
-  }
+  const d1Ventes = (ventesData || []) as VenteRow[];
 
   d1Ventes.forEach((vente) => {
     const summary = getSummary(summaries, vente.owner_email || "");
@@ -314,37 +299,38 @@ export async function GET(request: NextRequest) {
     }
   });
 
-  if (db) {
-    const { results } = await db
-      .prepare(
-        `select owner_email, profil_id, statut, count(*) as total
-         from tickets
-         group by owner_email, profil_id, statut`
-      )
-      .all<TicketStatRow>();
+  const { data: ticketRows } = await supabase
+    .from("tickets")
+    .select("owner_email, profil_id, statut");
 
-    (results || []).forEach((row) => {
-      const ownerEmail =
-        normalizeEmail(row.owner_email) ||
-        (row.profil_id ? profilOwnerById.get(Number(row.profil_id)) : "") ||
-        "";
-      const summary = getSummary(summaries, ownerEmail);
-      if (!summary) return;
+  const ticketCounts = new Map<string, number>();
 
-      const total = Number(row.total || 0);
-      const statut = String(row.statut || "").toLowerCase();
-      const profilDetail = row.profil_id
-        ? profilDetailById.get(Number(row.profil_id))
-        : null;
+  (ticketRows || []).forEach((row: { owner_email?: string | null; profil_id?: number | null; statut?: string | null }) => {
+    const key = `${normalizeEmail(row.owner_email)}|${row.profil_id ?? ""}|${row.statut ?? ""}`;
+    ticketCounts.set(key, (ticketCounts.get(key) || 0) + 1);
+  });
 
-      if (statut === "vendu") {
-        summary.ticketsVendus += total;
-        if (profilDetail) profilDetail.ticketsVendus += total;
-      } else {
-        summary.ticketsDisponibles += total;
-        if (profilDetail) profilDetail.ticketsDisponibles += total;
-      }
-    });
+  for (const [key, total] of ticketCounts.entries()) {
+    const [ownerEmail, profilIdRaw, statutRaw] = key.split("|");
+    const owner =
+      ownerEmail ||
+      (profilIdRaw ? profilOwnerById.get(Number(profilIdRaw)) : "") ||
+      "";
+    const summary = getSummary(summaries, owner);
+    if (!summary) continue;
+
+    const statut = String(statutRaw || "").toLowerCase();
+    const profilDetail = profilIdRaw
+      ? profilDetailById.get(Number(profilIdRaw))
+      : null;
+
+    if (statut === "vendu") {
+      summary.ticketsVendus += total;
+      if (profilDetail) profilDetail.ticketsVendus += total;
+    } else {
+      summary.ticketsDisponibles += total;
+      if (profilDetail) profilDetail.ticketsDisponibles += total;
+    }
   }
 
   summaries.forEach((summary) => {
