@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-session";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
+import { ensureVentesSchema, getTicketsDb } from "@/lib/cloudflare-d1";
 import { getSupabaseAdminClient } from "@/lib/supabase-server";
 
 type ActivitySummary = {
@@ -43,6 +43,7 @@ type RouterRow = OwnerRow & {
 
 type VenteRow = OwnerRow & {
   id?: number | null;
+  profil_id?: number | null;
   montant?: number | null;
   telephone?: string | null;
   statut?: string | null;
@@ -187,7 +188,6 @@ export async function GET(request: NextRequest) {
     { data: clients },
     { data: routeurs },
     { data: profils },
-    { data: ventes },
     { data: retraits },
   ] =
     await Promise.all([
@@ -199,15 +199,13 @@ export async function GET(request: NextRequest) {
         .from("profils")
         .select("id, owner_email, nom, prix, duree, slug"),
       supabase
-        .from("ventes")
-        .select("id, owner_email, montant, telephone, statut, created_at, profils ( nom )"),
-      supabase
         .from("retraits")
         .select("id, owner_email, montant, commission, net, statut, created_at"),
     ]);
 
   const profilOwnerById = new Map<number, string>();
   const profilDetailById = new Map<number, ProfilDetail>();
+  const profilNomById = new Map<number, string>();
 
   (clients || []).forEach((client: { email?: string | null }) => {
     getSummary(summaries, client.email || "");
@@ -253,10 +251,25 @@ export async function GET(request: NextRequest) {
     };
 
     profilDetailById.set(profil.id, detail);
+    profilNomById.set(profil.id, profil.nom || "Profil sans nom");
     summary.details.profils.push(detail);
   });
 
-  ((ventes || []) as VenteRow[]).forEach((vente) => {
+  const db = await getTicketsDb();
+  let d1Ventes: VenteRow[] = [];
+
+  if (db) {
+    await ensureVentesSchema(db);
+    const ventesResult = await db
+      .prepare(
+        "select id, profil_id, montant, telephone, statut, owner_email, created_at from ventes order by id desc"
+      )
+      .all<VenteRow>();
+
+    d1Ventes = ventesResult.results || [];
+  }
+
+  d1Ventes.forEach((vente) => {
     const summary = getSummary(summaries, vente.owner_email || "");
     if (!summary) return;
 
@@ -265,7 +278,7 @@ export async function GET(request: NextRequest) {
     summary.revenus += montant;
     updateLastActivity(summary, vente.created_at);
 
-    const profilName = vente.profils?.nom || "Profil inconnu";
+    const profilName = profilNomById.get(Number(vente.profil_id)) || "Profil inconnu";
     const profilDetail = summary.details.profils.find(
       (profil) => profil.nom === profilName
     );
@@ -300,8 +313,6 @@ export async function GET(request: NextRequest) {
       summary.retraitsEnAttente += 1;
     }
   });
-
-  const db = await getTicketsDb();
 
   if (db) {
     const { results } = await db

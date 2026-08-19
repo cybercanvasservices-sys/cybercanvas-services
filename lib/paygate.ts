@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getTicketsDb } from "@/lib/cloudflare-d1";
+import { ensureVentesSchema, getTicketsDb } from "@/lib/cloudflare-d1";
 
 type Ticket = {
   id: number;
@@ -17,6 +17,8 @@ type Profil = {
 type PaygateStatus = {
   status?: number;
   phone_number?: string;
+  amount?: number | string;
+  amount_paid?: number | string;
   error_code?: number;
   error_message?: string;
   [key: string]: unknown;
@@ -120,6 +122,65 @@ export async function checkPaygatePayment(identifier: string): Promise<PaymentCh
   };
 }
 
+function base64UrlEncode(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
+function constantTimeEqualHex(a: string, b: string) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
+async function hmacSha256(secret: string, payload: Record<string, unknown>) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(JSON.stringify(payload))
+  );
+
+  return base64UrlEncode(new Uint8Array(signature));
+}
+
+export async function verifyPaygateWebhookSignature(
+  payload: Record<string, unknown>,
+  signature: string | null
+) {
+  const secret = process.env.PAYGATE_WEBHOOK_SECRET;
+
+  if (!secret) {
+    return { verified: false, configured: false };
+  }
+
+  if (!signature) {
+    return { verified: false, configured: true };
+  }
+
+  const expected = await hmacSha256(secret, payload);
+
+  return { verified: constantTimeEqualHex(signature, expected), configured: true };
+}
+
 export async function deliverTicketAfterPayment({
   profilId,
   identifier,
@@ -157,25 +218,7 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  const existingTicket = await db
-    .prepare(
-      `select id, username, password, profil_id, owner_email
-       from tickets
-       where sale_identifier = ? and statut = 'vendu'
-       limit 1`
-    )
-    .bind(identifier)
-    .first<Ticket>();
-
-  if (existingTicket) {
-    return {
-      success: true,
-      status: 200,
-      message: "Paiement deja confirme",
-      ticket: existingTicket,
-      data: payment.data,
-    };
-  }
+  await ensureVentesSchema(db);
 
   const supabase = getSupabaseAdmin();
 
@@ -214,6 +257,65 @@ export async function deliverTicketAfterPayment({
     };
   }
 
+  const telephone = payment.data?.phone_number || "";
+  const montantNet = Math.max(
+    Number(profil.prix) - Math.round(Number(profil.prix) * 0.1),
+    0
+  );
+
+  const existingTicket = await db
+    .prepare(
+      `select id, username, password, profil_id, owner_email
+       from tickets
+       where sale_identifier = ? and statut = 'vendu'
+       limit 1`
+    )
+    .bind(identifier)
+    .first<Ticket>();
+
+  if (existingTicket) {
+    const ownerEmail = profil.owner_email || existingTicket.owner_email || null;
+
+    await db
+      .prepare(
+        `insert or ignore into ventes
+         (profil_id, ticket_id, montant, telephone, statut, owner_email, sale_identifier)
+         values (?, ?, ?, ?, 'paye', ?, ?)`
+      )
+      .bind(
+        existingTicket.profil_id,
+        existingTicket.id,
+        montantNet,
+        telephone,
+        ownerEmail,
+        identifier
+      )
+      .run();
+
+    const saved = await db
+      .prepare("select id from ventes where sale_identifier = ?")
+      .bind(identifier)
+      .first<{ id: number }>();
+
+    if (!saved) {
+      return {
+        success: false,
+        status: 500,
+        message:
+          "Le paiement est confirme, mais l enregistrement du credit a echoue",
+        data: payment.data,
+      };
+    }
+
+    return {
+      success: true,
+      status: 200,
+      message: "Paiement deja confirme",
+      ticket: existingTicket,
+      data: payment.data,
+    };
+  }
+
   const ticketDispo = await db
     .prepare(
       `update tickets
@@ -238,28 +340,42 @@ export async function deliverTicketAfterPayment({
     };
   }
 
-  const { error: venteError } = await supabase.from("ventes").insert([
-    {
-      profil_id: ticketDispo.profil_id,
-      ticket_id: ticketDispo.id,
-      // Commission de 10 % prelevee sur chaque ticket vendu
-      montant: Math.max(Number(profil.prix) - Math.round(Number(profil.prix) * 0.1), 0),
-      telephone: payment.data?.phone_number || "",
-      statut: "paye",
-      owner_email: profil.owner_email || ticketDispo.owner_email || null,
-    },
-  ]);
+  const ownerEmail = profil.owner_email || ticketDispo.owner_email || null;
 
-  if (venteError) {
+  await db
+    .prepare(
+      `insert into ventes
+       (profil_id, ticket_id, montant, telephone, statut, owner_email, sale_identifier)
+       values (?, ?, ?, ?, 'paye', ?, ?)`
+    )
+    .bind(
+      ticketDispo.profil_id,
+      ticketDispo.id,
+      montantNet,
+      telephone,
+      ownerEmail,
+      identifier
+    )
+    .run();
+
+  const saved = await db
+    .prepare("select id from ventes where sale_identifier = ?")
+    .bind(identifier)
+    .first<{ id: number }>();
+
+  if (!saved) {
     await db
-      .prepare("update tickets set statut = 'disponible', sale_identifier = null, sold_at = null where id = ?")
+      .prepare(
+        "update tickets set statut = 'disponible', sale_identifier = null, sold_at = null where id = ?"
+      )
       .bind(ticketDispo.id)
       .run();
 
     return {
       success: false,
       status: 500,
-      message: "Le paiement est confirme, mais l enregistrement du credit a echoue",
+      message:
+        "Le paiement est confirme, mais l enregistrement du credit a echoue",
       data: payment.data,
     };
   }

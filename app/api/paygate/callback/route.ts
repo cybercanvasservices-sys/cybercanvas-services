@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   deliverTicketAfterPayment,
   extractProfilIdFromIdentifier,
+  verifyPaygateWebhookSignature,
 } from "@/lib/paygate";
 
 type CallbackPayload = Record<string, string>;
@@ -65,6 +66,19 @@ function pickValue(payload: CallbackPayload, keys: string[]) {
 async function handleCallback(req: Request) {
   try {
     const payload = await readCallbackPayload(req);
+    const signature =
+      req.headers.get("x-paygate-signature") ||
+      req.headers.get("x-paygate-secret");
+
+    const signatureCheck = await verifyPaygateWebhookSignature(payload, signature);
+
+    if (signatureCheck.configured && !signatureCheck.verified) {
+      return NextResponse.json(
+        { success: false, message: "Signature PayGate invalide" },
+        { status: 401 }
+      );
+    }
+
     const identifier = pickValue(payload, identifierKeys);
     const profilId =
       pickValue(payload, profilKeys) ||

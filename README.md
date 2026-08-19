@@ -30,6 +30,7 @@ ADMIN_EMAIL=
 ADMIN_PASSWORD=
 ADMIN_SESSION_SECRET=
 PAYGATE_TOKEN=
+PAYGATE_WEBHOOK_SECRET=
 ```
 
 Important: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET` et `PAYGATE_TOKEN` doivent rester cote serveur. Ne pas les exposer dans le code client.
