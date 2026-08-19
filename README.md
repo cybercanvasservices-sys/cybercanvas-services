@@ -26,9 +26,9 @@ Ouvrir ensuite `http://localhost:3000`.
 Voir `.env.example` pour la liste complete.
 
 ```env
-NEXT_PUBLIC_Supabase_URL=
-NEXT_PUBLIC_Supabase_ANON_KEY=
-Supabase_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
 ADMIN_SESSION_SECRET=
@@ -41,7 +41,7 @@ EMAIL_FROM=
 ADMIN_ALERT_EMAIL=
 ```
 
-Important: `Supabase_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET` et `PAYGATE_TOKEN` doivent rester cote serveur. Ne pas les exposer dans le code client.
+Important: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET` et `PAYGATE_TOKEN` doivent rester cote serveur. Ne pas les exposer dans le code client.
 
 ## Base de donnees
 
@@ -49,7 +49,7 @@ Une seule base : **Supabase (Postgres)**. Toutes les tables (clients, routers,
 profils, ventes, tickets, boutique) y vivent.
 
 Executer les migrations dans l'ordre documente dans `migrations/README.md`
-(dossier `migrations/Supabase/*.sql`, via Supabase SQL Editor).
+(dossier `migrations/supabase/*.sql`, via Supabase SQL Editor).
 
 Les anciennes donnees Cloudflare D1 (tickets, ventes, boutique) sont transferees
 vers Supabase avec le script de migration de donnees (voir `migrations/README.md`).
@@ -94,7 +94,7 @@ npm run build
 ## Securite production
 
 - Regenerer les cles Supabase et PayGate si elles ont ete partagees.
-- Garder la cle `Supabase_SERVICE_ROLE_KEY` uniquement dans les routes serveur.
+- Garder la cle `SUPABASE_SERVICE_ROLE_KEY` uniquement dans les routes serveur.
 - Utiliser un `ADMIN_SESSION_SECRET` long et unique.
 - Les tables sensibles ont RLS active sans policy publique : seules les routes
   serveur (service_role) y accedent. La cle anon ne lit que la vue `public_profils`.
