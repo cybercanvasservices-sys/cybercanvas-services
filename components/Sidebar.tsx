@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 
 const offerLinks = [
-  { href: "/dashboard/routers", label: "Mes Routeurs", icon: Router },
-  { href: "/profils", label: "Mes Groupes", icon: Layers },
+  { href: "/dashboard/routers", label: "Mes Cybers", icon: Router },
+  { href: "/profils", label: "Mes Profils", icon: Layers },
   { href: "/tickets", label: "Mes Tickets", icon: Ticket },
   { href: "/ventes", label: "Mes Recettes", icon: Banknote },
   { href: "/retraits", label: "Mes Retraits", icon: Banknote },
