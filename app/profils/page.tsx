@@ -79,9 +79,7 @@ export default function ProfilsPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void chargerProfils();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+    }, 0);return () => window.clearTimeout(timer);
   }, [chargerProfils]);
 
   async function ajouterProfil() {
@@ -219,8 +217,11 @@ export default function ProfilsPage() {
   async function copierLien(slug: string) {
     await navigator.clipboard.writeText(`${origin}/buy/${slug}`);
     window.alert("Lien de paiement copie.");
-  }
-
+  }  const profilsAffiches = [...profils].sort((a, b) => {
+    const cyberA = String(a.routeur_id || "");
+    const cyberB = String(b.routeur_id || "");
+    return cyberA.localeCompare(cyberB) || a.nom.localeCompare(b.nom);
+  });
   return (
     <AdminShell title="Profils WiFi" breadcrumb="Profils">
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
@@ -297,13 +298,17 @@ export default function ProfilsPage() {
             </div>
           </div>
 
-          {profils.length === 0 ? (
+          {profilsAffiches.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
               Aucun profil créé.
             </div>
           ) : (
             <div className="grid gap-4">
-              {profils.map((profil) => {
+              {profilsAffiches.map((profil, index) => {
+                const cyber = cybers.find((item) => String(item.id) === String(profil.routeur_id));
+                const previousProfil = index > 0 ? profilsAffiches[index - 1] : null;
+
+                const afficherCyber = String(previousProfil?.routeur_id || "") !== String(profil.routeur_id || "");
                 const lienPaiement = `${origin}/buy/${profil.slug}`;
                 const stats = ticketStats.filter(
                   (stat) => stat.profil_id === profil.id
@@ -312,12 +317,12 @@ export default function ProfilsPage() {
                   stats.find((stat) => stat.statut === "disponible")?.total || 0;
                 const vendus =
                   stats.find((stat) => stat.statut === "vendu")?.total || 0;
-
                 return (
                   <article
                     key={profil.id}
                     className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                   >
+                    {afficherCyber && <div className="mb-4 border-b border-cyan-100 pb-3 text-sm font-black uppercase tracking-wide text-cyan-700">Cyber : {cyber?.nom || "Cyber non attribué"}</div>}
                     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                       <div>
                         <h3 className="text-xl font-black text-slate-900">
@@ -466,8 +471,7 @@ function Badge({
 }: {
   label: string;
   value: string | number;
-}) {
-  return (
+}) {return (
     <div className="rounded-lg bg-white px-3 py-2">
       <p className="text-xs font-semibold text-slate-500">
         {label}
@@ -478,3 +482,9 @@ function Badge({
     </div>
   );
 }
+
+
+
+
+
+

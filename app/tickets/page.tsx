@@ -204,7 +204,7 @@ export default function TicketsPage() {
       </h1>
 
       <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+        <div className="grid gap-6">
           <div className="grid gap-3">
             <label className="block text-sm font-bold text-slate-700">
               Afficher les tickets du profil
@@ -240,7 +240,7 @@ export default function TicketsPage() {
             <p className="text-sm font-bold text-slate-700">
               Importer des tickets pour un groupe
             </p>
-            <div className="mt-2 grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+            <div className="mt-3 grid gap-3">
               <select
                 value={selectedCyberId}
                 onChange={(event) => setSelectedCyberId(event.target.value)}
@@ -365,4 +365,5 @@ export default function TicketsPage() {
     </AdminShell>
   );
 }
+
 

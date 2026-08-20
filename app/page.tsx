@@ -9,7 +9,6 @@ import {
   Headphones,
   Network,
   Download,
-  Smartphone,
   Router,
   ShieldCheck,
   ShoppingBag,
@@ -92,20 +91,12 @@ export default function Home() {
                 Découvrir nos services
               </a>
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <PwaInstallButton />
+              <button type="button" disabled className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[#cfd9d5] bg-[#edf1ef] px-6 py-3.5 text-sm font-bold text-[#82918b]" title="APK en préparation">
+                <Download size={17} /> Installer l application APK Android
+              </button>
             </div>
-            <div className="mt-4 grid max-w-xl gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#cfe0da] bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-sm font-extrabold text-[#173a34]"><Smartphone size={18} className="text-[#0a6f61]" /> Application web</div>
-                <p className="mt-2 text-xs leading-5 text-[#63756f]">Android et iPhone, sans téléchargement depuis une boutique.</p>
-              </div>
-              <div className="rounded-xl border border-[#cfe0da] bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-sm font-extrabold text-[#173a34]"><Download size={18} className="text-[#0a6f61]" /> APK Android</div>
-                <p className="mt-2 text-xs leading-5 text-[#63756f]">Version Android directe en préparation, avec le même compte.</p>
-              </div>
-            </div>
-
             <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#526861]">
               <span className="flex items-center gap-2"><Check size={16} className="text-[#0a806e]" /> Installation professionnelle</span>
               <span className="flex items-center gap-2"><Check size={16} className="text-[#0a806e]" /> Assistance locale</span>
@@ -184,6 +175,8 @@ export default function Home() {
     </main>
   );
 }
+
+
 
 
 
