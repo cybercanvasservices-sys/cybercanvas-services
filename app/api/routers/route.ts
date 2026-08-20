@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
   const systeme = String(body.systeme || "MIKROTIK").trim();
   const dnsName = String(body.dns_name || "wifi.cybercanvas.local").trim();
   const adresse = String(body.adresse || "").trim();
+  const numeroRetrait = String(body.numero_retrait || "").trim();
 
   if (!nom || !description || !adresse) {
     return NextResponse.json(
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
     systeme,
     dns_name: dnsName,
     adresse,
+    numero_retrait: numeroRetrait || null,
     owner_email: access.role === "client" ? access.email : null,
     token,
     statut: "offline",
@@ -211,6 +213,7 @@ export async function PATCH(request: NextRequest) {
   const systeme = String(body.systeme || "MIKROTIK").trim();
   const dnsName = String(body.dns_name || "wifi.cybercanvas.local").trim();
   const adresse = String(body.adresse || "").trim();
+  const numeroRetrait = String(body.numero_retrait || "").trim();
 
   if (!id || !nom) {
     return NextResponse.json(
@@ -225,6 +228,7 @@ export async function PATCH(request: NextRequest) {
     systeme,
     dns_name: dnsName,
     adresse,
+    numero_retrait: numeroRetrait || null,
   };
 
   let updateQuery = supabase

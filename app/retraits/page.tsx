@@ -10,6 +10,7 @@ type RetraitStatus = "en_attente" | "valide" | "refuse";
 type RetraitRequest = {
   id: number;
   owner_email: string;
+  routeur_id?: string | number | null;
   client_nom: string;
   client_telephone?: string | null;
   numero_paiement: string;
@@ -21,6 +22,8 @@ type RetraitRequest = {
   created_at: string;
   updated_at?: string | null;
 };
+
+type CyberOption = { id: string | number; nom: string; numero_retrait?: string | null };
 
 type SessionResponse = {
   role?: "admin" | "client" | null;
@@ -54,6 +57,8 @@ export default function RetraitsPage() {
   const [role, setRole] = useState<"admin" | "client" | null>(null);
   const [montant, setMontant] = useState("");
   const [numeroPaiement, setNumeroPaiement] = useState("");
+  const [cybers, setCybers] = useState<CyberOption[]>([]);
+  const [selectedCyberId, setSelectedCyberId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -82,7 +87,19 @@ export default function RetraitsPage() {
       setRetraits(result.retraits || []);
     }
 
+    async function loadCybers() {
+      const response = await fetch("/api/routers", { cache: "no-store" });
+      const result = (await response.json()) as { routeurs?: CyberOption[] };
+      const available = result.routeurs || [];
+      setCybers(available);
+      if (available.length === 1) {
+        setSelectedCyberId(String(available[0].id));
+        setNumeroPaiement(available[0].numero_retrait || "");
+      }
+    }
+
     void loadSession();
+    void loadCybers();
     void loadRetraits();
   }, []);
 
@@ -141,6 +158,7 @@ export default function RetraitsPage() {
       body: JSON.stringify({
         montant: montantNumber,
         numero_paiement: numeroPaiement,
+        routeur_id: selectedCyberId ? Number(selectedCyberId) : null,
       }),
     });
     const result = (await response.json()) as {
@@ -237,7 +255,23 @@ export default function RetraitsPage() {
           <h2 className="text-lg font-black text-slate-900">
             Nouvelle demande
           </h2>
-          <form className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={requestRetrait}>
+          <form className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={requestRetrait}>
+            <select
+              value={selectedCyberId}
+              onChange={(event) => {
+                const value = event.target.value;
+                const cyber = cybers.find((item) => String(item.id) === value);
+                setSelectedCyberId(value);
+                setNumeroPaiement(cyber?.numero_retrait || "");
+              }}
+              required
+              className="rounded-lg border border-slate-300 bg-white p-3 outline-none focus:border-cyan-500"
+            >
+              <option value="">Choisir le Cyber</option>
+              {cybers.map((cyber) => (
+                <option key={cyber.id} value={cyber.id}>{cyber.nom}</option>
+              ))}
+            </select>
             <input
               value={montant}
               onChange={(event) => setMontant(event.target.value)}
@@ -249,7 +283,8 @@ export default function RetraitsPage() {
             <input
               value={numeroPaiement}
               onChange={(event) => setNumeroPaiement(event.target.value)}
-              placeholder="Numero Mixx/Flooz"
+              placeholder="Numero enregistré du Cyber"
+              readOnly
               className="rounded-lg border border-slate-300 p-3 outline-none focus:border-cyan-500"
             />
             <button

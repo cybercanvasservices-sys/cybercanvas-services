@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const montant = Number(body.montant);
-  const numeroPaiement = clean(body.numero_paiement);
+  const numeroPaiementSaisi = clean(body.numero_paiement);
+  const routeurId = Number(body.routeur_id || 0);
 
   if (!montant || montant < RETRAIT_MINIMUM) {
     return NextResponse.json(
@@ -93,9 +94,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!routeurId) {
+    return NextResponse.json(
+      { message: "Choisissez le Cyber concerne par ce retrait." },
+      { status: 400 }
+    );
+  }
+
+  let cyberQuery = supabase
+    .from("routers")
+    .select("id, numero_retrait")
+    .eq("id", routeurId);
+  cyberQuery = cyberQuery.eq("owner_email", access.email);
+  const { data: cyber, error: cyberError } = await cyberQuery.maybeSingle();
+
+  if (cyberError || !cyber) {
+    return NextResponse.json(
+      { message: "Cyber introuvable ou non autorise." },
+      { status: 400 }
+    );
+  }
+
+  const numeroPaiement = numeroPaiementSaisi || clean(cyber.numero_retrait);
   if (!numeroPaiement) {
     return NextResponse.json(
-      { message: "Numero de paiement obligatoire." },
+      { message: "Ajoutez le numero de retrait dans Mes Cybers." },
       { status: 400 }
     );
   }
@@ -116,6 +139,7 @@ export async function POST(request: NextRequest) {
         client_nom: client?.nom || access.email,
         client_telephone: client?.telephone || "",
         numero_paiement: numeroPaiement,
+        routeur_id: routeurId,
         montant,
         commission,
         net,

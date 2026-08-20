@@ -11,6 +11,7 @@ type RouterRow = {
   systeme?: string | null;
   dns_name?: string | null;
   adresse?: string | null;
+  numero_retrait?: string | null;
   token: string | null;
   statut: string | null;
   credits: number | null;
@@ -26,12 +27,14 @@ export default function RoutersPage() {
   const [systeme, setSysteme] = useState("MIKROTIK");
   const [dnsName, setDnsName] = useState("");
   const [adresse, setAdresse] = useState("");
+  const [numeroRetrait, setNumeroRetrait] = useState("");
   const [editingRouteur, setEditingRouteur] = useState<RouterRow | null>(null);
   const [editNom, setEditNom] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSysteme, setEditSysteme] = useState("MIKROTIK");
   const [editDnsName, setEditDnsName] = useState("");
   const [editAdresse, setEditAdresse] = useState("");
+  const [editNumeroRetrait, setEditNumeroRetrait] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,6 +86,7 @@ export default function RoutersPage() {
         systeme,
         dns_name: dnsName.trim() || "wifi.cybercanvas.local",
         adresse: adresse.trim(),
+        numero_retrait: numeroRetrait.trim(),
       }),
     });
 
@@ -100,6 +104,7 @@ export default function RoutersPage() {
     setSysteme("MIKROTIK");
     setDnsName("");
     setAdresse("");
+    setNumeroRetrait("");
     setModalOpen(false);
     setSaving(false);
   }
@@ -127,6 +132,7 @@ export default function RoutersPage() {
         systeme: editSysteme,
         dns_name: editDnsName.trim() || "wifi.cybercanvas.local",
         adresse: editAdresse.trim(),
+        numero_retrait: editNumeroRetrait.trim(),
       }),
     });
 
@@ -355,6 +361,7 @@ export default function RoutersPage() {
                               routeur.dns_name || "wifi.cybercanvas.local"
                             );
                             setEditAdresse(routeur.adresse || routeur.token || "");
+                            setEditNumeroRetrait(routeur.numero_retrait || "");
                             setError("");
                           }}
                           className="rounded bg-indigo-500 px-2 py-1.5 text-xs font-black text-white"
@@ -468,6 +475,16 @@ export default function RoutersPage() {
                 />
               </label>
 
+
+              <label className="mt-4 block text-sm font-bold text-slate-700">
+                Numero de retrait Flooz/TMoney
+                <input
+                  value={numeroRetrait}
+                  onChange={(event) => setNumeroRetrait(event.target.value)}
+                  placeholder="Exemple : 228XXXXXXXX"
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none focus:border-cyan-500"
+                />
+              </label>
               <label className="mt-4 block text-sm font-bold text-slate-700">
                 Adresse
                 <textarea
@@ -575,6 +592,16 @@ export default function RoutersPage() {
                 />
               </label>
 
+
+              <label className="mt-4 block text-sm font-bold text-slate-700">
+                Numero de retrait Flooz/TMoney
+                <input
+                  value={editNumeroRetrait}
+                  onChange={(event) => setEditNumeroRetrait(event.target.value)}
+                  placeholder="Exemple : 228XXXXXXXX"
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none focus:border-cyan-500"
+                />
+              </label>
               <label className="mt-4 block text-sm font-bold text-slate-700">
                 Adresse
                 <textarea
