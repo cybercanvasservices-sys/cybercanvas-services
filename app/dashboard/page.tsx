@@ -164,23 +164,7 @@ export default function DashboardPage() {
           <Link href="/wifi/offres" className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-300">G&eacute;rer mes offres <ArrowUpRight size={17} /></Link>
         </div>
       </section>
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetric icon={Activity} label="État du service" value={isActiveClient ? "Actif" : "En attente"} tone={isActiveClient ? "success" : "warning"} />
-        <DashboardMetric icon={Ticket} label="Tickets disponibles" value="0" />
-        <DashboardMetric icon={Wallet} label="Solde actuel" value={`${solde.toLocaleString("fr-FR")} FCFA`} />
-        <DashboardMetric icon={ShieldCheck} label="Compte sécurisé" value={client?.email_verified || isAdmin ? "Vérifié" : "À vérifier"} tone={client?.email_verified || isAdmin ? "success" : "warning"} />
-      </section>
-      <section className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Acc&egrave;s rapides</p><h2 className="mt-1 text-lg font-black text-slate-900">G&eacute;rer votre activit&eacute;</h2></div><Activity className="text-cyan-700" size={22} /></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <QuickAction href="/wifi/offres" title="Offres WiFi" text="Cr&eacute;er et g&eacute;rer vos offres" icon={Ticket} />
-            <QuickAction href="/routeurs" title="Routeurs" text="Suivre vos &eacute;quipements" icon={Router} />
-            <QuickAction href="/statistiques" title="Statistiques" text="Analyser votre activit&eacute;" icon={BarChart3} />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Prochaine &eacute;tape</p><h2 className="mt-1 text-lg font-black text-slate-900">Activez votre espace</h2><p className="mt-3 text-sm leading-6 text-slate-500">Configurez votre premi&egrave;re offre et connectez un routeur pour commencer &agrave; vendre vos acc&egrave;s WiFi.</p><Link href="/wifi/offres" className="mt-5 inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900">Commencer <ArrowUpRight size={16} /></Link></div>
-      </section>      {!isActiveClient && (
+      {!isActiveClient && (
       <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-cyan-950 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white">
@@ -464,6 +448,7 @@ function MiniStat({
     </div>
   );
 }
+
 
 
 
