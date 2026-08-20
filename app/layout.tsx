@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import OpenChatWidget from "@/components/OpenChatWidget";
 
@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   title: "CyberCanvas Services",
   description:
     "Plateforme cloud pour vendre et gerer des tickets WiFi MikroTik.",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
 };
 
 export default function RootLayout({
@@ -22,4 +24,7 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+
 

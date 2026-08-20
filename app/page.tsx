@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import PwaInstallButton from "@/components/PwaInstallButton";
 import {
   ArrowUpRight,
   Camera,
@@ -89,6 +90,10 @@ export default function Home() {
                 Découvrir nos services
               </a>
             </div>
+            <div className="mt-4">
+              <PwaInstallButton />
+            </div>
+
             <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#526861]">
               <span className="flex items-center gap-2"><Check size={16} className="text-[#0a806e]" /> Installation professionnelle</span>
               <span className="flex items-center gap-2"><Check size={16} className="text-[#0a806e]" /> Assistance locale</span>
@@ -167,3 +172,6 @@ export default function Home() {
     </main>
   );
 }
+
+
+
