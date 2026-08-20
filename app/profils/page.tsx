@@ -27,6 +27,7 @@ export default function ProfilsPage() {
   const [duree, setDuree] = useState("");
   const [cybers, setCybers] = useState<CyberOption[]>([]);
   const [selectedCyberId, setSelectedCyberId] = useState("");
+  const [viewCyberId, setViewCyberId] = useState("");
   const [origin] = useState(() =>
     typeof window === "undefined" ? "" : window.location.origin
   );
@@ -222,7 +223,9 @@ export default function ProfilsPage() {
     const cyberB = String(b.routeur_id || "");
     return cyberA.localeCompare(cyberB) || a.nom.localeCompare(b.nom);
   });
-  return (
+  const profilsVisibles = viewCyberId
+    ? profilsAffiches.filter((profil) => String(profil.routeur_id) === viewCyberId)
+    : profilsAffiches;  return (
     <AdminShell title="Profils WiFi" breadcrumb="Profils">
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -298,15 +301,24 @@ export default function ProfilsPage() {
             </div>
           </div>
 
-          {profilsAffiches.length === 0 ? (
+            <select
+              value={viewCyberId}
+              onChange={(event) => setViewCyberId(event.target.value)}
+              className="mt-4 w-full rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cyan-500"
+            >
+              <option value="">Afficher tous les Cybers</option>
+              {cybers.map((cyber) => (
+                <option key={cyber.id} value={cyber.id}>Cyber : {cyber.nom}</option>
+              ))}
+            </select>          {profilsVisibles.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
               Aucun profil créé.
             </div>
           ) : (
             <div className="grid gap-4">
-              {profilsAffiches.map((profil, index) => {
+              {profilsVisibles.map((profil, index) => {
                 const cyber = cybers.find((item) => String(item.id) === String(profil.routeur_id));
-                const previousProfil = index > 0 ? profilsAffiches[index - 1] : null;
+                const previousProfil = index > 0 ? profilsVisibles[index - 1] : null;
 
                 const afficherCyber = String(previousProfil?.routeur_id || "") !== String(profil.routeur_id || "");
                 const lienPaiement = `${origin}/buy/${profil.slug}`;
@@ -482,6 +494,8 @@ function Badge({
     </div>
   );
 }
+
+
 
 
 
