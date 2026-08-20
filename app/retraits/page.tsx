@@ -158,7 +158,7 @@ export default function RetraitsPage() {
       body: JSON.stringify({
         montant: montantNumber,
         numero_paiement: numeroPaiement,
-        routeur_id: selectedCyberId ? Number(selectedCyberId) : null,
+        routeur_id: selectedCyberId || null,
       }),
     });
     const result = (await response.json()) as {

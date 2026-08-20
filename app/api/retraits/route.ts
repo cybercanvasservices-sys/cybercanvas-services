@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const montant = Number(body.montant);
   const numeroPaiementSaisi = clean(body.numero_paiement);
-  const routeurId = Number(body.routeur_id || 0);
+  const routeurId = clean(body.routeur_id);
 
   if (!montant || montant < RETRAIT_MINIMUM) {
     return NextResponse.json(
