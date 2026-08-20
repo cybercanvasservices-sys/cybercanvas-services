@@ -59,6 +59,7 @@ export default function RetraitsPage() {
   const [numeroPaiement, setNumeroPaiement] = useState("");
   const [cybers, setCybers] = useState<CyberOption[]>([]);
   const [selectedCyberId, setSelectedCyberId] = useState("");
+  const [soldeCyber, setSoldeCyber] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,24 @@ export default function RetraitsPage() {
     .reduce((total, retrait) => total + retrait.net, 0);
   const montantNumber = Number(montant || 0);
   const preview = calculateAmounts(montantNumber);
+
+  async function chargerSoldeCyber(routeurId: string) {
+    const [ventesResponse, retraitsResponse] = await Promise.all([
+      fetch("/api/ventes", { cache: "no-store" }),
+      fetch("/api/retraits", { cache: "no-store" }),
+    ]);
+    const ventesResult = (await ventesResponse.json()) as { ventes?: Array<{ montant?: number; routeur_id?: string | number | null }> };
+    const retraitsResult = (await retraitsResponse.json()) as { retraits?: Array<{ net?: number; routeur_id?: string | number | null; statut?: string }> };
+    const totalVentes = (ventesResult.ventes || [])
+      .filter((vente) => String(vente.routeur_id || "") === routeurId)
+      .reduce((total, vente) => total + Number(vente.montant || 0), 0);
+    const totalRetraits = (retraitsResult.retraits || [])
+      .filter((retrait) => String(retrait.routeur_id || "") === routeurId && ["en_attente", "valide"].includes(retrait.statut || ""))
+      .reduce((total, retrait) => total + Number(retrait.net || 0), 0);
+    const disponible = Math.max(totalVentes - totalRetraits, 0);
+    setSoldeCyber(disponible);
+    setMontant(disponible > 0 ? String(disponible) : "");
+  }
 
   async function refreshRetraits() {
     const response = await fetch("/api/retraits", { cache: "no-store" });
@@ -263,6 +282,7 @@ export default function RetraitsPage() {
                 const cyber = cybers.find((item) => String(item.id) === value);
                 setSelectedCyberId(value);
                 setNumeroPaiement(cyber?.numero_retrait || "");
+                void chargerSoldeCyber(value);
               }}
               required
               className="rounded-lg border border-slate-300 bg-white p-3 outline-none focus:border-cyan-500"
@@ -277,7 +297,7 @@ export default function RetraitsPage() {
               onChange={(event) => setMontant(event.target.value)}
               type="number"
               min={RETRAIT_MINIMUM}
-              placeholder="Montant brut"
+              placeholder="Montant brut disponible"
               className="rounded-lg border border-slate-300 p-3 outline-none focus:border-cyan-500"
             />
             <input

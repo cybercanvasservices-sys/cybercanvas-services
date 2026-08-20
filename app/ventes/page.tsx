@@ -22,6 +22,8 @@ export default function VentesPage() {
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [search, setSearch] = useState("");
   const [periode, setPeriode] = useState("tout");
+  const [dateDebut, setDateDebut] = useState("");
+  const [dateFin, setDateFin] = useState("");
   const [cyberFilter, setCyberFilter] = useState("tout");
   const [cybers, setCybers] = useState<CyberOption[]>([]);
 
@@ -55,15 +57,12 @@ export default function VentesPage() {
 
     return ventes.filter((vente) => {
       const dateVente = new Date(vente.created_at);
-      const matchPeriode =
-        periode === "tout" ||
-        (periode === "jour" &&
-          dateVente.toDateString() === maintenant.toDateString()) ||
-        (periode === "mois" &&
-          dateVente.getMonth() === maintenant.getMonth() &&
-          dateVente.getFullYear() === maintenant.getFullYear());
-
+      const dateLocale = `${dateVente.getFullYear()}-${String(dateVente.getMonth() + 1).padStart(2, "0")}-${String(dateVente.getDate()).padStart(2, "0")}`;
+      const matchCalendrier = (!dateDebut || dateLocale >= dateDebut) && (!dateFin || dateLocale <= dateFin);
       const matchCyber = cyberFilter === "tout" || String(vente.routeur_id || "") === cyberFilter;
+      const matchPeriode = dateDebut || dateFin
+        ? matchCalendrier
+        : periode === "tout" || (periode === "jour" && dateVente.toDateString() === maintenant.toDateString()) || (periode === "mois" && dateVente.getMonth() === maintenant.getMonth() && dateVente.getFullYear() === maintenant.getFullYear());
 
       const matchSearch =
         !query ||
@@ -80,7 +79,7 @@ export default function VentesPage() {
 
       return matchPeriode && matchCyber && matchSearch;
     });
-  }, [cyberFilter, periode, search, ventes]);
+  }, [cyberFilter, dateDebut, dateFin, periode, search, ventes]);
 
   const revenus = ventes.reduce(
     (total, vente) => total + (vente.montant || 0),
@@ -167,7 +166,7 @@ export default function VentesPage() {
       </div>
 
       <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px_220px]">
+        <div className="grid gap-4 lg:grid-cols-[1fr_180px_170px_170px_220px]">
           <label className="block text-sm font-bold text-slate-700">
             Recherche
             <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 focus-within:border-cyan-500">
@@ -208,7 +207,17 @@ export default function VentesPage() {
             </select>
           </label>
 
-          <div className="rounded-lg bg-slate-50 px-4 py-3">
+          '<label className="block text-sm font-bold text-slate-700">
+            Date de début
+            <input type="date" value={dateDebut} onChange={(event) => setDateDebut(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-500" />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Date de fin
+            <input type="date" value={dateFin} onChange={(event) => setDateFin(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-500" />
+          </label>
+
+          '<div className="rounded-lg bg-slate-50 px-4 py-3">
             <p className="text-sm font-semibold text-slate-500">Selection</p>
             <p className="mt-1 text-xl font-black text-slate-900">
               {revenusFiltres} FCFA
