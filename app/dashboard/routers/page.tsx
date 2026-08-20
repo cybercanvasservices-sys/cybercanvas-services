@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { Copy, ExternalLink, Plus, Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
 
@@ -17,19 +17,10 @@ type RouterRow = {
   created_at: string | null;
 };
 
-type ProfilRow = {
-  id: number;
-  nom: string;
-  prix: number;
-  duree: string;
-  slug: string;
-};
 
 export default function RoutersPage() {
   const [routeurs, setRouteurs] = useState<RouterRow[]>([]);
-  const [profils, setProfils] = useState<ProfilRow[]>([]);
   const [search, setSearch] = useState("");
-  const [profilSearch, setProfilSearch] = useState("");
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
   const [systeme, setSysteme] = useState("MIKROTIK");
@@ -43,12 +34,8 @@ export default function RoutersPage() {
   const [editAdresse, setEditAdresse] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [profilsLoading, setProfilsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [origin] = useState(() =>
-    typeof window === "undefined" ? "" : window.location.origin
-  );
 
   useEffect(() => {
     let active = true;
@@ -73,27 +60,6 @@ export default function RoutersPage() {
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    fetch("/api/profils")
-      .then((response) => response.json())
-      .then((result) => {
-        if (!active) return;
-
-        setProfils(result.profils || []);
-        setProfilsLoading(false);
-      })
-      .catch((loadError) => {
-        if (!active) return;
-        console.error(loadError);
-        setProfilsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   async function ajouterRouteur(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -187,11 +153,6 @@ export default function RoutersPage() {
     window.alert("Code du routeur copie.");
   }
 
-  async function copierLienPaiement(slug: string) {
-    const link = `${origin}/buy/${slug}`;
-    await navigator.clipboard.writeText(link);
-    window.alert("Lien de paiement copie.");
-  }
 
   async function supprimerRouteur(id: string | number) {
     const confirmation = window.confirm(
@@ -245,21 +206,9 @@ export default function RoutersPage() {
     0
   );
 
-  const profilsFiltres = useMemo(() => {
-    const query = profilSearch.trim().toLowerCase();
-
-    if (!query) return profils;
-
-    return profils.filter((profil) =>
-      [profil.nom, profil.prix, profil.duree, profil.slug]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
-  }, [profilSearch, profils]);
 
   return (
-    <AdminShell title="Mes Routeurs" breadcrumb="Offres WiFi / Routeurs">
+    <AdminShell title="Mes Cybers" breadcrumb="Offres WiFi / Mes Cybers">
       <div className="mb-5 grid gap-4 md:grid-cols-4">
         <Stat label="Total routeurs" value={routeurs.length} />
         <Stat label="Connectes" value={online} tone="text-emerald-600" />
@@ -451,89 +400,6 @@ export default function RoutersPage() {
         </p>
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-start">
-          <div>
-            <h2 className="text-lg font-black text-slate-900">
-              Liens portail captif
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Chaque groupe/profil genere un lien de paiement. Collez ce lien
-              sur la page de votre portail captif du routeur MikroTik: au clic,
-              le client est redirige vers la page de paiement.
-            </p>
-          </div>
-
-          <label className="text-sm font-medium text-slate-500">
-            Recherche :
-            <span className="mt-2 flex w-64 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 focus-within:border-cyan-500">
-              <Search size={16} className="text-slate-400" />
-              <input
-                value={profilSearch}
-                onChange={(event) => setProfilSearch(event.target.value)}
-                className="w-full bg-transparent text-slate-800 outline-none"
-              />
-            </span>
-          </label>
-        </div>
-
-        <div className="mt-5 grid gap-3">
-          {profilsLoading ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">
-              Chargement des liens...
-            </div>
-          ) : profilsFiltres.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">
-              Aucun groupe disponible. Créez un groupe dans « Mes groupes ».
-            </div>
-          ) : (
-            profilsFiltres.map((profil) => {
-              const lienPaiement = `${origin}/buy/${profil.slug}`;
-
-              return (
-                <article
-                  key={profil.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                >
-                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-                    <div className="min-w-0">
-                      <h3 className="font-black text-slate-900">
-                        {profil.nom}
-                      </h3>
-                      <p className="mt-1 text-sm font-semibold text-cyan-700">
-                        {profil.duree} - {profil.prix} FCFA
-                      </p>
-                      <p className="mt-3 break-all rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-                        {lienPaiement}
-                      </p>
-                    </div>
-
-                    <div className="flex shrink-0 flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => copierLienPaiement(profil.slug)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700 hover:bg-cyan-50"
-                      >
-                        <Copy size={16} />
-                        Copier
-                      </button>
-                      <a
-                        href={lienPaiement}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800"
-                      >
-                        <ExternalLink size={16} />
-                        Tester
-                      </a>
-                    </div>
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </div>
-      </section>
 
       {modalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 px-4 py-4">
