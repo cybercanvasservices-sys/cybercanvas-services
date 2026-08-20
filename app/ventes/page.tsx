@@ -13,14 +13,24 @@ interface Vente {
   profils: {
     nom: string;
   } | null;
+  routeur_id?: string | number | null;
 }
+
+type CyberOption = { id: string | number; nom: string };
 
 export default function VentesPage() {
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [search, setSearch] = useState("");
   const [periode, setPeriode] = useState("tout");
+  const [cyberFilter, setCyberFilter] = useState("tout");
+  const [cybers, setCybers] = useState<CyberOption[]>([]);
 
   useEffect(() => {
+    fetch("/api/routers", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => setCybers(result.routeurs || []))
+      .catch(() => setCybers([]));
+
     async function chargerVentes() {
       const response = await fetch("/api/ventes", { cache: "no-store" });
       const result = (await response.json()) as {
@@ -53,6 +63,8 @@ export default function VentesPage() {
           dateVente.getMonth() === maintenant.getMonth() &&
           dateVente.getFullYear() === maintenant.getFullYear());
 
+      const matchCyber = cyberFilter === "tout" || String(vente.routeur_id || "") === cyberFilter;
+
       const matchSearch =
         !query ||
         [
@@ -66,9 +78,9 @@ export default function VentesPage() {
           .toLowerCase()
           .includes(query);
 
-      return matchPeriode && matchSearch;
+      return matchPeriode && matchCyber && matchSearch;
     });
-  }, [periode, search, ventes]);
+  }, [cyberFilter, periode, search, ventes]);
 
   const revenus = ventes.reduce(
     (total, vente) => total + (vente.montant || 0),
@@ -99,7 +111,7 @@ export default function VentesPage() {
     const map = new Map<string, { nom: string; ventes: number; revenus: number }>();
 
     ventesFiltrees.forEach((vente) => {
-      const nom = vente.profils?.nom || "Profil inconnu";
+      const nom = cybers.find((cyber) => String(cyber.id) === String(vente.routeur_id))?.nom || "Cyber non attribué";
       const current = map.get(nom) || { nom, ventes: 0, revenus: 0 };
       current.ventes += 1;
       current.revenus += vente.montant || 0;
@@ -107,7 +119,7 @@ export default function VentesPage() {
     });
 
     return Array.from(map.values()).sort((a, b) => b.revenus - a.revenus);
-  }, [ventesFiltrees]);
+  }, [cybers, ventesFiltrees]);
 
   async function copierResume() {
     const lignes = ventesFiltrees.map((vente) =>
@@ -155,7 +167,7 @@ export default function VentesPage() {
       </div>
 
       <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px]">
+        <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px_220px]">
           <label className="block text-sm font-bold text-slate-700">
             Recherche
             <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 focus-within:border-cyan-500">
@@ -168,6 +180,20 @@ export default function VentesPage() {
               />
             </span>
           </label>
+          <label className="block text-sm font-bold text-slate-700">
+            Cyber
+            <select
+              value={cyberFilter}
+              onChange={(event) => setCyberFilter(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-500"
+            >
+              <option value="tout">Tous les Cybers</option>
+              {cybers.map((cyber) => (
+                <option key={cyber.id} value={cyber.id}>{cyber.nom}</option>
+              ))}
+            </select>
+          </label>
+
 
           <label className="block text-sm font-bold text-slate-700">
             Periode
@@ -194,7 +220,7 @@ export default function VentesPage() {
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-black text-slate-900">
-            Resume par groupe
+            Resume par Cyber
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             Classement selon les recettes de la selection.
@@ -245,6 +271,7 @@ export default function VentesPage() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
                   <th className="p-3">Date</th>
+                  <th className="p-3">Cyber</th>
                   <th className="p-3">Profil</th>
                   <th className="p-3">Montant</th>
                   <th className="p-3">Téléphone</th>
@@ -254,7 +281,7 @@ export default function VentesPage() {
               <tbody>
                 {ventesFiltrees.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                    <td colSpan={6} className="p-8 text-center text-slate-500">
                       Aucune vente trouvee.
                     </td>
                   </tr>
@@ -266,6 +293,9 @@ export default function VentesPage() {
                     >
                       <td className="p-3">
                         {new Date(vente.created_at).toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        {cybers.find((cyber) => String(cyber.id) === String(vente.routeur_id))?.nom || "Non attribué"}
                       </td>
                       <td className="p-3">
                         {vente.profils?.nom || "Profil inconnu"}

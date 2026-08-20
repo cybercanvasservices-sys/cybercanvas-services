@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("profils")
-    .select("id, nom, prix, duree, slug, owner_email")
+    .select("id, nom, prix, duree, slug, owner_email, routeur_id")
     .order("id", { ascending: false });
 
   if (access.role === "client") {
@@ -85,10 +85,25 @@ export async function POST(request: NextRequest) {
   const nom = String(body.nom || "").trim();
   const prix = Number(body.prix);
   const duree = String(body.duree || "").trim();
+  const routeurId = String(body.routeur_id || "").trim();
 
-  if (!nom || !prix || !duree) {
+  if (!nom || !prix || !duree || !routeurId) {
     return NextResponse.json(
       { message: "Nom, prix et duree obligatoires." },
+      { status: 400 }
+    );
+  }
+
+  const cyberQuery = supabase
+    .from("routers")
+    .select("id")
+    .eq("id", routeurId)
+    .eq("owner_email", access.role === "client" ? access.email : null);
+  const { data: cyber, error: cyberError } = await cyberQuery.maybeSingle();
+
+  if (cyberError || !cyber) {
+    return NextResponse.json(
+      { message: "Cyber introuvable ou non autorise." },
       { status: 400 }
     );
   }
@@ -104,9 +119,10 @@ export async function POST(request: NextRequest) {
         duree,
         slug,
         owner_email: access.role === "client" ? access.email : null,
+        routeur_id: routeurId,
       },
     ])
-    .select("id, nom, prix, duree, slug, owner_email")
+    .select("id, nom, prix, duree, slug, owner_email, routeur_id")
     .single();
 
   if (error) {
@@ -137,6 +153,7 @@ export async function PATCH(request: NextRequest) {
   const nom = String(body.nom || "").trim();
   const prix = Number(body.prix);
   const duree = String(body.duree || "").trim();
+  const routeurId = String(body.routeur_id || "").trim();
 
   if (!id || !nom || !prix || !duree) {
     return NextResponse.json(
@@ -157,7 +174,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { data, error } = await query
-    .select("id, nom, prix, duree, slug, owner_email")
+    .select("id, nom, prix, duree, slug, owner_email, routeur_id")
     .single();
 
   if (error) {

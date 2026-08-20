@@ -10,7 +10,10 @@ type Profil = {
   prix: number;
   duree: string;
   slug: string;
+  routeur_id?: string | null;
 };
+
+type CyberOption = { id: string | number; nom: string };
 
 type TicketStat = {
   profil_id: number;
@@ -22,6 +25,8 @@ export default function ProfilsPage() {
   const [nom, setNom] = useState("");
   const [prix, setPrix] = useState("");
   const [duree, setDuree] = useState("");
+  const [cybers, setCybers] = useState<CyberOption[]>([]);
+  const [selectedCyberId, setSelectedCyberId] = useState("");
   const [origin] = useState(() =>
     typeof window === "undefined" ? "" : window.location.origin
   );
@@ -65,6 +70,13 @@ export default function ProfilsPage() {
   }, [chargerStatsTickets]);
 
   useEffect(() => {
+    fetch("/api/routers", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => setCybers(result.routeurs || []))
+      .catch(() => setCybers([]));
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       void chargerProfils();
     }, 0);
@@ -73,8 +85,8 @@ export default function ProfilsPage() {
   }, [chargerProfils]);
 
   async function ajouterProfil() {
-    if (!nom || !prix || !duree) {
-      alert("Veuillez remplir tous les champs");
+    if (!selectedCyberId || !nom || !prix || !duree) {
+      alert("Choisissez un Cyber et remplissez tous les champs");
       return;
     }
 
@@ -90,6 +102,7 @@ export default function ProfilsPage() {
           nom,
           prix: Number(prix),
           duree,
+          routeur_id: selectedCyberId,
         }),
       });
 
@@ -103,6 +116,7 @@ export default function ProfilsPage() {
       setNom("");
       setPrix("");
       setDuree("");
+      setSelectedCyberId("");
       await chargerProfils();
       alert("Profil créé avec succès.");
     } catch (err) {
@@ -114,7 +128,7 @@ export default function ProfilsPage() {
 
   async function modifierProfil() {
     if (!editingProfil || !editNom || !editPrix || !editDuree) {
-      alert("Veuillez remplir tous les champs");
+      alert("Choisissez un Cyber et remplissez tous les champs");
       return;
     }
 
@@ -219,6 +233,18 @@ export default function ProfilsPage() {
           </p>
 
           <div className="mt-5 grid gap-4">
+            <select
+              value={selectedCyberId}
+              onChange={(event) => setSelectedCyberId(event.target.value)}
+              required
+              className="rounded-lg border border-slate-300 bg-white p-3 outline-none focus:border-cyan-500"
+            >
+              <option value="">Choisir le Cyber</option>
+              {cybers.map((cyber) => (
+                <option key={cyber.id} value={cyber.id}>{cyber.nom}</option>
+              ))}
+            </select>
+
             <input
               value={nom}
               onChange={(e) =>

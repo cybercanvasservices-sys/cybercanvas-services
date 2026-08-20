@@ -1,9 +1,11 @@
-﻿"use client";
+"use client";
 
 import { Search, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/lib/supabase";
+
+type CyberOption = { id: string | number; nom: string };
 
 type Profil = {
   id: number;
@@ -29,6 +31,8 @@ function getErrorMessage(error: unknown) {
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [profils, setProfils] = useState<Profil[]>([]);
+  const [cybers, setCybers] = useState<CyberOption[]>([]);
+  const [selectedCyberId, setSelectedCyberId] = useState("");
   const [search, setSearch] = useState("");
   const [profilFilter, setProfilFilter] = useState("all");
   const [selectedProfilId, setSelectedProfilId] = useState("");
@@ -68,6 +72,9 @@ export default function TicketsPage() {
 
         if (profilsError) throw profilsError;
         setProfils(profilsData || []);
+        const cybersResponse = await fetch("/api/routers", { cache: "no-store" });
+        const cybersResult = (await cybersResponse.json()) as { routeurs?: CyberOption[] };
+        setCybers(cybersResult.routeurs || []);
       } catch (err) {
         setError(getErrorMessage(err));
       }
@@ -80,6 +87,11 @@ export default function TicketsPage() {
 
   async function uploaderTickets() {
     setError("");
+
+    if (!selectedCyberId) {
+      setError("Selectionnez un Cyber avant de continuer.");
+      return;
+    }
 
     if (!selectedProfilId) {
       setError("Selectionnez un groupe/profil avant l'importation.");
@@ -112,6 +124,7 @@ export default function TicketsPage() {
 
           return {
             profil_id: Number(selectedProfilId),
+          routeur_id: selectedCyberId,
             username: username?.trim(),
             password: password?.trim(),
             statut: "disponible",
@@ -132,6 +145,7 @@ export default function TicketsPage() {
         },
         body: JSON.stringify({
           profil_id: Number(selectedProfilId),
+          routeur_id: selectedCyberId,
           tickets: ticketsImportes.map((ticket) => ({
             username: ticket.username,
             password: ticket.password,
@@ -226,7 +240,17 @@ export default function TicketsPage() {
             <p className="text-sm font-bold text-slate-700">
               Importer des tickets pour un groupe
             </p>
-            <div className="mt-2 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+            <div className="mt-2 grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+              <select
+                value={selectedCyberId}
+                onChange={(event) => setSelectedCyberId(event.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-cyan-500"
+              >
+                <option value="">Choisir un Cyber</option>
+                {cybers.map((cyber) => (
+                  <option key={cyber.id} value={cyber.id}>{cyber.nom}</option>
+                ))}
+              </select>
               <select
                 value={selectedProfilId}
                 onChange={(event) => setSelectedProfilId(event.target.value)}

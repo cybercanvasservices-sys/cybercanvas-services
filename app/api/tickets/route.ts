@@ -47,12 +47,17 @@ export async function POST(request: NextRequest) {
   if (!access) return NextResponse.json({ message: "Non autorisé." }, { status: 401 });
   const supabase = getSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ message: "Configuration Supabase serveur manquante." }, { status: 500 });
-  const body = (await request.json()) as { profil_id?: number; tickets?: { username?: string; password?: string }[] };
+  const body = (await request.json()) as { profil_id?: number; routeur_id?: string; tickets?: { username?: string; password?: string }[] };
   const profilId = Number(body.profil_id);
+  const routeurId = String(body.routeur_id || "").trim();
   const tickets = (body.tickets || []).map((ticket) => ({ username: String(ticket.username || "").trim(), password: String(ticket.password || "").trim() })).filter((ticket) => ticket.username && ticket.password);
-  if (!profilId || tickets.length === 0) return NextResponse.json({ message: "Profil et tickets obligatoires." }, { status: 400 });
+  if (!routeurId || !profilId || tickets.length === 0) return NextResponse.json({ message: "Cyber, profil et tickets obligatoires." }, { status: 400 });
   if (!(await ownsProfile(access, profilId))) return NextResponse.json({ message: "Profil non autorisé." }, { status: 403 });
-  const { error } = await supabase.from("tickets").upsert(tickets.map((ticket) => ({ profil_id: profilId, owner_email: access.role === "client" ? access.email : null, username: ticket.username, password: ticket.password, statut: "disponible" })), { onConflict: "profil_id,username", ignoreDuplicates: true });
+  const cyberQuery = supabase.from("routers").select("id").eq("id", routeurId);
+  const scopedCyberQuery = access.role === "client" ? cyberQuery.eq("owner_email", access.email) : cyberQuery.is("owner_email", null);
+  const { data: cyber } = await scopedCyberQuery.maybeSingle();
+  if (!cyber) return NextResponse.json({ message: "Cyber non autorisé." }, { status: 403 });
+  const { error } = await supabase.from("tickets").upsert(tickets.map((ticket) => ({ profil_id: profilId, routeur_id: routeurId, owner_email: access.role === "client" ? access.email : null, username: ticket.username, password: ticket.password, statut: "disponible" })), { onConflict: "profil_id,username", ignoreDuplicates: true });
   if (error) return NextResponse.json({ message: error.message }, { status: 500 });
   return NextResponse.json({ message: `${tickets.length} ticket(s) importé(s).`, count: tickets.length });
 }
