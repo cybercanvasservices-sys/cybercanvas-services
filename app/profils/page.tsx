@@ -21,6 +21,12 @@ type TicketStat = {
   total: number;
 };
 
+type TicketPreview = {
+  profil_id: number;
+  username: string;
+  password: string;
+  statut: string;
+};
 export default function ProfilsPage() {
   const [nom, setNom] = useState("");
   const [prix, setPrix] = useState("");
@@ -38,6 +44,7 @@ export default function ProfilsPage() {
   const [editDuree, setEditDuree] = useState("");
   const [loading, setLoading] = useState(false);
   const [ticketStats, setTicketStats] = useState<TicketStat[]>([]);
+  const [tickets, setTickets] = useState<TicketPreview[]>([]);
 
   const chargerStatsTickets = useCallback(async function chargerStatsTickets() {
     try {
@@ -68,6 +75,9 @@ export default function ProfilsPage() {
 
     setProfils(result.profils || []);
     await chargerStatsTickets();
+    const ticketsResponse = await fetch("/api/tickets", { cache: "no-store" });
+    const ticketsResult = (await ticketsResponse.json()) as { tickets?: TicketPreview[] };
+    setTickets(ticketsResponse.ok ? ticketsResult.tickets || [] : []);
   }, [chargerStatsTickets]);
 
   useEffect(() => {
@@ -322,6 +332,7 @@ export default function ProfilsPage() {
 
                 const afficherCyber = String(previousProfil?.routeur_id || "") !== String(profil.routeur_id || "");
                 const lienPaiement = `${origin}/buy/${profil.slug}`;
+                const ticketsDuProfil = tickets.filter((ticket) => ticket.profil_id === profil.id);
                 const stats = ticketStats.filter(
                   (stat) => stat.profil_id === profil.id
                 );
@@ -335,6 +346,21 @@ export default function ProfilsPage() {
                     className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                   >
                     {afficherCyber && <div className="mb-4 border-b border-cyan-100 pb-3 text-sm font-black uppercase tracking-wide text-cyan-700">Cyber : {cyber?.nom || "Cyber non attribué"}</div>}
+                    <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
+                      <p className="text-xs font-black uppercase tracking-wide text-slate-500">Tickets de ce profil</p>
+                      {ticketsDuProfil.length === 0 ? (
+                        <p className="mt-2 text-sm text-slate-400">Aucun ticket importé pour ce profil.</p>
+                      ) : (
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {ticketsDuProfil.slice(0, 20).map((ticket) => (
+                            <div key={ticket.username} className="rounded-md bg-slate-50 px-3 py-2 text-sm">
+                              <span className="font-black text-slate-900">{ticket.username}</span>
+                              <span className="ml-2 text-slate-500">/ {ticket.password}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                       <div>
                         <h3 className="text-xl font-black text-slate-900">
@@ -494,6 +520,9 @@ function Badge({
     </div>
   );
 }
+
+
+
 
 
 
